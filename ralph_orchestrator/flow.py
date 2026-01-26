@@ -33,7 +33,7 @@ class FlowOptions:
     mode: str = "change"
     
     # Task generation options
-    task_count: str = "8-15"
+    task_count: str = "auto"
     model: str = "sonnet"
     
     # Output paths
@@ -48,7 +48,7 @@ class FlowOptions:
     force: bool = False
     
     # Run options
-    max_iterations: int = 30
+    max_iterations: int = 200
     gate_type: str = "full"
     dry_run: bool = False
     verbose: bool = False

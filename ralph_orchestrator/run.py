@@ -67,7 +67,7 @@ class RunOptions:
     prd_json: Optional[str] = None
     task_id: Optional[str] = None
     from_task_id: Optional[str] = None
-    max_iterations: int = 30
+    max_iterations: int = 200
     gate_type: str = "full"
     dry_run: bool = False
     resume: bool = False

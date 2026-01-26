@@ -618,12 +618,12 @@ class TestFlowOptions:
         options = FlowOptions()
         
         assert options.mode == "change"
-        assert options.task_count == "8-15"
+        assert options.task_count == "auto"
         assert options.model == "sonnet"
         assert options.skip_approval is False
         assert options.template == "auto"
         assert options.force is False
-        assert options.max_iterations == 30
+        assert options.max_iterations == 200
         assert options.gate_type == "full"
         assert options.dry_run is False
         assert options.verbose is False

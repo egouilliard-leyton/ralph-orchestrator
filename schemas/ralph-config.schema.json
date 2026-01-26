@@ -346,7 +346,7 @@
         "max_iterations": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 100,
+          "maximum": 1000,
           "default": 30,
           "description": "Max task loop iterations"
         },

@@ -103,7 +103,7 @@ class ClaudeRunner:
         
         # Add model if specified
         if model:
-            args.extend(["-m", model])
+            args.extend(["--model", model])
         
         # Add allowed tools if specified
         if allowed_tools:

@@ -105,7 +105,7 @@ class AgentRoleConfig:
 class LimitsConfig:
     """Iteration and timeout limits."""
     claude_timeout: int = 1800
-    max_iterations: int = 30
+    max_iterations: int = 200
     post_verify_iterations: int = 10
     ui_fix_iterations: int = 10
     robot_fix_iterations: int = 10
@@ -246,7 +246,7 @@ def _parse_limits(limits_data: Dict[str, Any]) -> LimitsConfig:
     """Parse limits configuration dict."""
     return LimitsConfig(
         claude_timeout=limits_data.get("claude_timeout", 1800),
-        max_iterations=limits_data.get("max_iterations", 30),
+        max_iterations=limits_data.get("max_iterations", 200),
         post_verify_iterations=limits_data.get("post_verify_iterations", 10),
         ui_fix_iterations=limits_data.get("ui_fix_iterations", 10),
         robot_fix_iterations=limits_data.get("robot_fix_iterations", 10),

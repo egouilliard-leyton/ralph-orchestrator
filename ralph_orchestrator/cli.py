@@ -449,10 +449,110 @@ class TaskGenerationResult:
     task_count: int
 
 
+@dataclass
+class ComplexityAnalysisResult:
+    """Result of complexity analysis for task count recommendation."""
+    min_tasks: int
+    max_tasks: int
+    complexity: str  # "simple", "moderate", "complex", "very_complex"
+    rationale: str
+
+
+def analyze_complexity_for_task_count(
+    md_content: str,
+    model: str = "sonnet",
+    timeout: int = 300,
+    verbose: bool = False,
+) -> ComplexityAnalysisResult:
+    """Analyze the complexity of a change request and recommend task count range.
+    
+    Uses Claude to analyze the markdown content and determine an appropriate
+    number of tasks based on:
+    - Scope of changes (single file vs multi-file vs multi-system)
+    - Number of distinct features/requirements
+    - Technical complexity indicators
+    - Dependencies between components
+    
+    Args:
+        md_content: The markdown content to analyze.
+        model: Claude model to use for analysis.
+        timeout: Timeout in seconds.
+        verbose: Whether to print progress.
+        
+    Returns:
+        ComplexityAnalysisResult with recommended task range.
+    """
+    complexity_schema: Dict[str, Any] = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["min_tasks", "max_tasks", "complexity", "rationale"],
+        "properties": {
+            "min_tasks": {"type": "integer", "minimum": 3, "maximum": 50},
+            "max_tasks": {"type": "integer", "minimum": 3, "maximum": 100},
+            "complexity": {
+                "type": "string",
+                "enum": ["simple", "moderate", "complex", "very_complex"]
+            },
+            "rationale": {"type": "string", "maxLength": 500}
+        }
+    }
+    
+    prompt = (
+        "Analyze the following change request/PRD and determine the appropriate number of tasks.\n\n"
+        "ANALYSIS CRITERIA:\n"
+        "- simple (3-8 tasks): Single file changes, minor features, bug fixes\n"
+        "- moderate (8-15 tasks): Multi-file changes, new features with clear scope\n"
+        "- complex (15-25 tasks): Multi-system changes, new services/APIs, significant refactoring\n"
+        "- very_complex (25-50 tasks): Architecture changes, new frameworks, multiple integrations\n\n"
+        "FACTORS TO CONSIDER:\n"
+        "- Number of distinct features or requirements mentioned\n"
+        "- Number of systems/components affected\n"
+        "- Whether it involves UI, backend, database, or infrastructure changes\n"
+        "- Dependencies and integration points\n"
+        "- Testing and verification requirements\n\n"
+        "Respond with min_tasks and max_tasks that form a reasonable range for this work.\n"
+        "The range should typically span 3-5 tasks (e.g., 8-12, not 5-20).\n\n"
+        "DOCUMENT TO ANALYZE:\n"
+        "-------------------\n"
+        f"{md_content[:8000]}\n"  # Truncate to avoid token limits
+    )
+    
+    if verbose:
+        print("  Analyzing complexity to determine task count...")
+    
+    try:
+        data = _invoke_claude_structured(prompt=prompt, schema=complexity_schema, model=model, timeout=timeout)
+        
+        # Validate the response
+        min_tasks = max(3, min(50, data.get("min_tasks", 8)))
+        max_tasks = max(min_tasks, min(100, data.get("max_tasks", 15)))
+        
+        # Ensure max >= min with reasonable spread
+        if max_tasks < min_tasks + 2:
+            max_tasks = min_tasks + 5
+        
+        return ComplexityAnalysisResult(
+            min_tasks=min_tasks,
+            max_tasks=max_tasks,
+            complexity=data.get("complexity", "moderate"),
+            rationale=data.get("rationale", "Default analysis")
+        )
+    except Exception as e:
+        # Fallback to moderate complexity on error
+        if verbose:
+            print(f"  Warning: Complexity analysis failed ({e}), using default range 8-15")
+        return ComplexityAnalysisResult(
+            min_tasks=8,
+            max_tasks=15,
+            complexity="moderate",
+            rationale=f"Default fallback (analysis error: {str(e)[:100]})"
+        )
+
+
 def generate_tasks_from_markdown(
     src: Path,
     out: Path,
-    task_count: str = "8-15",
+    task_count: str = "auto",
     branch: Optional[str] = None,
     model: str = "sonnet",
     timeout: int = 1800,
@@ -488,13 +588,23 @@ def generate_tasks_from_markdown(
     if branch is None:
         branch = f"ralph/{src.stem.lower().replace(' ', '-').replace('_', '-')}"
     
-    min_count, max_count = _parse_task_count(task_count)
-    if min_count is None:
-        min_count = 8
-    if max_count is None:
-        max_count = 15
-    
     md = src.read_text(encoding="utf-8", errors="replace")
+    
+    # Determine task count range
+    if task_count == "auto" or task_count is None:
+        # Use AI to analyze complexity and determine task count
+        complexity = analyze_complexity_for_task_count(md, model=model, verbose=verbose)
+        min_count = complexity.min_tasks
+        max_count = complexity.max_tasks
+        if verbose:
+            print(f"  Complexity: {complexity.complexity} → {min_count}-{max_count} tasks")
+            print(f"  Rationale: {complexity.rationale[:100]}...")
+    else:
+        min_count, max_count = _parse_task_count(task_count)
+        if min_count is None:
+            min_count = 8
+        if max_count is None:
+            max_count = 15
     
     # Use a relaxed schema for generation (easier for the model),
     # then validate against the canonical prd.schema.json after.
@@ -592,14 +702,14 @@ def command_flow(args: argparse.Namespace) -> int:
     
     options = FlowOptions(
         mode=mode,
-        task_count=getattr(args, "task_count", "8-15"),
+        task_count=getattr(args, "task_count", "auto"),
         model=getattr(args, "model", "sonnet"),
         out_md=getattr(args, "out_md", None),
         out_json=getattr(args, "out_json", None),
         skip_approval=getattr(args, "yes", False),
         template=getattr(args, "template", "auto"),
         force=getattr(args, "force", False),
-        max_iterations=getattr(args, "max_iterations", 30),
+        max_iterations=getattr(args, "max_iterations", 200),
         gate_type=getattr(args, "gates", "full"),
         dry_run=getattr(args, "dry_run", False),
         verbose=getattr(args, "verbose", False),
@@ -767,7 +877,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--from", dest="from_markdown", required=True, help="Source markdown (CR/PRD) file")
     sp.add_argument("--out", default=None, help="Output prd.json path (default: .ralph/prd.json)")
     sp.add_argument("--branch", default=None, help="branchName to write into prd.json")
-    sp.add_argument("--task-count", default="8-15", help="Target task count (e.g., '8-15' or '10')")
+    sp.add_argument("--task-count", default="auto", help="Target task count: 'auto' (AI analyzes complexity), or explicit range (e.g., '8-15' or '10')")
     sp.add_argument("--model", default="sonnet", help="Claude model (e.g. sonnet, opus)")
     sp.add_argument("--dry-run", action="store_true", help="Write file then print a short preview")
     sp.set_defaults(func=command_tasks)
@@ -784,8 +894,8 @@ def build_parser() -> argparse.ArgumentParser:
     def add_common_flow_args(parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "--task-count",
-            default="8-15",
-            help="Target task count range (e.g., '8-15' or '10')",
+            default="auto",
+            help="Target task count: 'auto' (AI analyzes complexity), or explicit range (e.g., '8-15' or '10')",
         )
         parser.add_argument(
             "--model",

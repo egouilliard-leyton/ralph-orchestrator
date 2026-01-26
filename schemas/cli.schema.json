@@ -215,7 +215,7 @@
               "type": "object",
               "properties": {
                 "type": { "const": "INT" },
-                "default": { "const": 30 },
+                "default": { "const": 200 },
                 "description": { "const": "Maximum task loop iterations" }
               }
             },
