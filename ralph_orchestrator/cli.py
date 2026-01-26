@@ -441,40 +441,61 @@ def _parse_task_count(task_count: Optional[str]) -> Tuple[Optional[int], Optiona
     return n, n
 
 
-def command_validate_tasks(args: argparse.Namespace) -> int:
-    """Validate a prd.json file against schema."""
-    path = Path(args.path) if args.path else Path(".ralph/prd.json")
-    if not path.exists():
-        eprint(f"Task file not found: {path}")
-        return 2
-    try:
-        _ = load_prd_json(path)
-    except Exception as e:
-        eprint(str(e))
-        return 1
-    print(f"✓ Valid: {path}")
-    return 0
+@dataclass
+class TaskGenerationResult:
+    """Result of task generation from markdown."""
+    data: Dict[str, Any]
+    path: Path
+    task_count: int
 
 
-def command_tasks(args: argparse.Namespace) -> int:
-    """Generate .ralph/prd.json tasks from a PRD/CR markdown file."""
-    src = Path(args.from_markdown)
+def generate_tasks_from_markdown(
+    src: Path,
+    out: Path,
+    task_count: str = "8-15",
+    branch: Optional[str] = None,
+    model: str = "sonnet",
+    timeout: int = 1800,
+    verbose: bool = False,
+) -> TaskGenerationResult:
+    """Generate .ralph/prd.json tasks from a PRD/CR markdown file.
+    
+    This is the shared helper used by both `ralph tasks` and `ralph flow`.
+    
+    Args:
+        src: Source markdown file path.
+        out: Output prd.json path.
+        task_count: Task count range (e.g., "8-15" or "10").
+        branch: Branch name for branchName field. Auto-generated from src if None.
+        model: Claude model alias (e.g., "sonnet", "opus").
+        timeout: Timeout in seconds for Claude call.
+        verbose: Whether to print progress messages.
+        
+    Returns:
+        TaskGenerationResult with generated data, path, and task count.
+        
+    Raises:
+        FileNotFoundError: If source markdown not found.
+        ValueError: If generated data fails schema validation.
+        RuntimeError: If Claude call fails.
+    """
     if not src.exists():
-        eprint(f"Source markdown not found: {src}")
-        return 2
-
-    out = Path(args.out) if args.out else Path(".ralph/prd.json")
+        raise FileNotFoundError(f"Source markdown not found: {src}")
+    
     out.parent.mkdir(parents=True, exist_ok=True)
-
-    branch = args.branch or f"ralph/{src.stem.lower().replace(' ', '-').replace('_', '-')}"
-    min_count, max_count = _parse_task_count(args.task_count)
+    
+    # Generate branch name if not provided
+    if branch is None:
+        branch = f"ralph/{src.stem.lower().replace(' ', '-').replace('_', '-')}"
+    
+    min_count, max_count = _parse_task_count(task_count)
     if min_count is None:
         min_count = 8
     if max_count is None:
         max_count = 15
-
+    
     md = src.read_text(encoding="utf-8", errors="replace")
-
+    
     # Use a relaxed schema for generation (easier for the model),
     # then validate against the canonical prd.schema.json after.
     prd_schema_relaxed: Dict[str, Any] = {
@@ -508,9 +529,7 @@ def command_tasks(args: argparse.Namespace) -> int:
             },
         },
     }
-
-    prd_schema_canonical = _read_schema("schemas/prd.schema.json")
-
+    
     prompt = (
         "You are generating a task list for Ralph orchestrator.\n\n"
         "INPUT: a markdown document describing a desired change.\n"
@@ -531,32 +550,118 @@ def command_tasks(args: argparse.Namespace) -> int:
         "----------------\n"
         f"{md}\n"
     )
+    
+    if verbose:
+        print(f"  Generating tasks from {src.name}...")
+        print(f"  Target: {min_count}-{max_count} tasks using {model}")
+    
+    data = _invoke_claude_structured(prompt=prompt, schema=prd_schema_relaxed, model=model, timeout=timeout)
+    ok, errs = validate_against_schema(data, "schemas/prd.schema.json")
+    if not ok:
+        raise ValueError("Invalid prd.json:\n" + "\n".join(f"- {e}" for e in errs))
+    
+    dump_json(out, data)
+    
+    tasks = data.get("tasks", [])
+    return TaskGenerationResult(data=data, path=out, task_count=len(tasks))
+
+
+def command_validate_tasks(args: argparse.Namespace) -> int:
+    """Validate a prd.json file against schema."""
+    path = Path(args.path) if args.path else Path(".ralph/prd.json")
+    if not path.exists():
+        eprint(f"Task file not found: {path}")
+        return 2
+    try:
+        _ = load_prd_json(path)
+    except Exception as e:
+        eprint(str(e))
+        return 1
+    print(f"✓ Valid: {path}")
+    return 0
+
+
+def command_flow(args: argparse.Namespace) -> int:
+    """Run one-command flow (change or new project)."""
+    from .flow import run_flow, FlowOptions, FlowResult
+    
+    repo_root = Path.cwd()
+    
+    # Determine mode from subcommand
+    mode = getattr(args, "flow_mode", "change")
+    
+    options = FlowOptions(
+        mode=mode,
+        task_count=getattr(args, "task_count", "8-15"),
+        model=getattr(args, "model", "sonnet"),
+        out_md=getattr(args, "out_md", None),
+        out_json=getattr(args, "out_json", None),
+        skip_approval=getattr(args, "yes", False),
+        template=getattr(args, "template", "auto"),
+        force=getattr(args, "force", False),
+        max_iterations=getattr(args, "max_iterations", 30),
+        gate_type=getattr(args, "gates", "full"),
+        dry_run=getattr(args, "dry_run", False),
+        verbose=getattr(args, "verbose", False),
+    )
+    
+    result = run_flow(repo_root=repo_root, options=options)
+    
+    # Print final summary
+    print()
+    if result.success:
+        if result.aborted_at == "approval":
+            print("Flow completed (execution skipped)")
+            print(f"  - Markdown: {result.md_path}")
+            print(f"  - Tasks: {result.json_path} ({result.tasks_count} tasks)")
+            print("\nTo run later: ralph run --prd-json .ralph/prd.json")
+            return 0
+        elif result.run_result:
+            print("Flow completed successfully")
+            return result.run_result.exit_code.value
+        else:
+            print("Flow completed")
+            return 0
+    else:
+        eprint(f"Flow failed at stage: {result.aborted_at}")
+        if result.error:
+            eprint(f"Error: {result.error}")
+        return 2
+
+
+def command_tasks(args: argparse.Namespace) -> int:
+    """Generate .ralph/prd.json tasks from a PRD/CR markdown file."""
+    src = Path(args.from_markdown)
+    out = Path(args.out) if args.out else Path(".ralph/prd.json")
+    branch = args.branch  # None is fine, helper will auto-generate
 
     try:
-        data = _invoke_claude_structured(prompt=prompt, schema=prd_schema_relaxed, model=args.model, timeout=1800)
-        ok, errs = validate_against_schema(data, "schemas/prd.schema.json")
-        if not ok:
-            raise ValueError("Invalid prd.json:\n" + "\n".join(f"- {e}" for e in errs))
-        dump_json(out, data)
-    except Exception as e:
+        result = generate_tasks_from_markdown(
+            src=src,
+            out=out,
+            task_count=args.task_count,
+            branch=branch,
+            model=args.model,
+            verbose=True,
+        )
+    except FileNotFoundError as e:
+        eprint(str(e))
+        return 2
+    except (ValueError, RuntimeError) as e:
         eprint(f"Error: {e}")
         return 1
 
     if args.dry_run:
         # Print a short preview for review without implying execution
-        try:
-            prd = load_prd_json(out)
-            tasks = prd.get("tasks", [])
-            print(f"Generated {len(tasks)} tasks in {out}:")
-            for t in tasks[:10]:
-                print(f"- {t.get('id')}: {t.get('title')}")
-            if len(tasks) > 10:
-                print(f"... and {len(tasks) - 10} more")
-        except Exception:
-            pass
+        tasks = result.data.get("tasks", [])
+        print(f"Generated {result.task_count} tasks in {result.path}:")
+        for t in tasks[:10]:
+            print(f"- {t.get('id')}: {t.get('title')}")
+        if len(tasks) > 10:
+            print(f"... and {len(tasks) - 10} more")
         return 0
 
-    print(f"✓ Wrote tasks: {out}")
+    print(f"✓ Wrote tasks: {result.path}")
     print("Next: review it, then run `ralph run --prd-json .ralph/prd.json --dry-run`")
     return 0
 
@@ -670,6 +775,87 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("validate-tasks", help="Validate prd.json against schema")
     sp.add_argument("--path", default=None, help="Path to prd.json (default: .ralph/prd.json)")
     sp.set_defaults(func=command_validate_tasks)
+
+    # Flow command with subcommands
+    sp_flow = sub.add_parser("flow", help="One-command flows (chat→tasks→validate→run)")
+    flow_sub = sp_flow.add_subparsers(dest="flow_mode", required=True)
+    
+    # Common flow arguments (added to both subcommands)
+    def add_common_flow_args(parser: argparse.ArgumentParser) -> None:
+        parser.add_argument(
+            "--task-count",
+            default="8-15",
+            help="Target task count range (e.g., '8-15' or '10')",
+        )
+        parser.add_argument(
+            "--model",
+            default="sonnet",
+            help="Claude model for chat and task generation (e.g., sonnet, opus)",
+        )
+        parser.add_argument(
+            "--out-md",
+            default=None,
+            help="Override markdown output path",
+        )
+        parser.add_argument(
+            "--out-json",
+            default=None,
+            help="Override prd.json output path (default: .ralph/prd.json)",
+        )
+        parser.add_argument(
+            "-y", "--yes",
+            action="store_true",
+            help="Skip approval prompt (auto-approve)",
+        )
+        parser.add_argument(
+            "--max-iterations",
+            type=int,
+            default=30,
+            help="Maximum task loop iterations",
+        )
+        parser.add_argument(
+            "--gates",
+            default="full",
+            choices=["build", "full", "none"],
+            help="Gate level to run",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Generate tasks but don't execute",
+        )
+        parser.add_argument(
+            "-v", "--verbose",
+            action="store_true",
+            help="Verbose output",
+        )
+    
+    # Flow change subcommand
+    sp_flow_change = flow_sub.add_parser(
+        "change",
+        help="Change request flow: chat→tasks→validate→approval→run",
+    )
+    add_common_flow_args(sp_flow_change)
+    sp_flow_change.set_defaults(func=command_flow)
+    
+    # Flow new subcommand
+    sp_flow_new = flow_sub.add_parser(
+        "new",
+        help="New project flow: init→chat→tasks→validate→approval→run",
+    )
+    add_common_flow_args(sp_flow_new)
+    sp_flow_new.add_argument(
+        "-t", "--template",
+        default="auto",
+        choices=["auto", "minimal", "python", "node", "fullstack"],
+        help="Project template for init (default: auto-detect)",
+    )
+    sp_flow_new.add_argument(
+        "-f", "--force",
+        action="store_true",
+        help="Force overwrite existing files during init",
+    )
+    sp_flow_new.set_defaults(func=command_flow)
 
     return p
 

@@ -26,6 +26,7 @@ Step-by-step guides for common tasks:
 
 | Guide | Description |
 |-------|-------------|
+| [How To Use Flow](./how-to-use-flow.md) | One-command flows: chat → tasks → execute |
 | [How To Create Tasks](./how-to-create-tasks.md) | Create and structure task lists |
 | [How To Use the CLI](./how-to-use-cli.md) | Run tasks and manage workflows |
 

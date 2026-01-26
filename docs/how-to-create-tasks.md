@@ -215,6 +215,81 @@ See `examples/prd-example-authentication.json` for a complete, well-structured t
 
 ---
 
+## One-Command Flow (Chat to Tasks to Run)
+
+The easiest way to create tasks is using the one-command flow, which handles everything from chat through execution:
+
+### For Existing Codebase Changes
+
+```bash
+ralph flow change
+```
+
+This will:
+1. Open an interactive Claude chat session
+2. Help you define your change request
+3. Write a markdown document to `changes/CR-chat-YYYYMMDD-HHMMSS.md`
+4. Automatically generate tasks in `.ralph/prd.json`
+5. Validate the tasks against the schema
+6. **Stop for your approval** - showing a task preview
+7. Run the verified task loop after you approve
+
+### For New Projects
+
+```bash
+ralph flow new
+```
+
+This adds an initial `ralph init` step before the chat, setting up your Ralph configuration.
+
+### Review Gate
+
+The flow stops before execution and shows you:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│             REVIEW BEFORE EXECUTION                      │
+├──────────────────────────────────────────────────────────┤
+│  Source markdown: changes/CR-chat-20260126-140532.md     │
+│  Task file:       .ralph/prd.json                        │
+│  Task count:      12                                     │
+├──────────────────────────────────────────────────────────┤
+│ Tasks preview:                                           │
+│  T-001: Investigate existing auth implementation         │
+│  T-002: Add JWT dependency to requirements               │
+│  T-003: Create auth configuration module                 │
+│  ... and 9 more tasks                                    │
+└──────────────────────────────────────────────────────────┘
+
+Proceed with execution? [y/N]
+```
+
+This gives you a chance to review the generated tasks before they run. You can:
+- Type `y` to approve and execute
+- Type `n` (or press Enter) to stop and review `.ralph/prd.json` manually
+- Use `--yes` flag to skip the prompt when you trust the generation
+
+### Flow Options
+
+```bash
+# Control task count
+ralph flow change --task-count 5-10
+
+# Generate tasks but don't execute
+ralph flow change --dry-run
+
+# Skip approval prompt
+ralph flow change --yes
+
+# Use a specific Claude model
+ralph flow change --model opus
+
+# New project with specific template
+ralph flow new --template python --force
+```
+
+---
+
 ## Importing Tasks from CR Markdown
 
 If you have existing tasks in a Change Request (CR) markdown file, you can import them to `prd.json` format.
@@ -303,6 +378,15 @@ See [Markdown Import/Export Specification](../specs/markdown-import-export.md) f
 ## Related Guides
 
 - [How To Set Up a Repository](./how-to-setup-repository.md) - Initial Ralph configuration
-- [How To Use the CLI](./how-to-use-cli.md) - Running tasks and CLI commands
+- [How To Use the CLI](./how-to-use-cli.md) - Running tasks and CLI commands (includes one-command flow)
 - [How To Use Autopilot](./how-to-use-autopilot.md) - Automated task generation
 - [How To Interpret Results](./how-to-interpret-results.md) - Understanding task execution results
+
+### Quick Reference: Task Creation Methods
+
+| Method | Command | Best For |
+|--------|---------|----------|
+| One-command flow | `ralph flow change` | End-to-end automation with review gate |
+| Chat then import | `ralph chat` + `ralph tasks` | More control over each step |
+| Autopilot | `ralph autopilot` | Report-driven improvements |
+| Manual | Edit `.ralph/prd.json` | Fine-tuned task definitions |

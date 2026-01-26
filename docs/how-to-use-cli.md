@@ -73,6 +73,59 @@ If you want to keep chatting after the file is written, run:
 ralph chat --mode change-request --no-auto-exit
 ```
 
+**Option: One-Command Flow (Recommended)**
+
+> **See [How To Use Flow](./how-to-use-flow.md) for a detailed guide on the flow commands.**
+
+If you want an end-to-end experience that handles chat, task generation, validation, and execution in one command:
+
+1. Open your terminal in your project directory.
+2. For an existing codebase change:
+   ```bash
+   ralph flow change
+   ```
+   Or for a new project:
+   ```bash
+   ralph flow new
+   ```
+3. Claude will open in interactive mode. Discuss your changes/requirements.
+4. When ready, Claude writes the markdown document and Ralph continues automatically:
+   - Generates tasks from the markdown
+   - Validates the task list
+   - Shows a review summary with task preview
+   - **Stops for your approval** before executing
+5. Type `y` to approve and run, or `n` to review files manually first.
+
+**Review Gate Behavior:**
+
+By default, Ralph stops after task generation and shows you:
+- Source markdown path
+- Task file path
+- Task count
+- Preview of the first 10 task titles
+
+This gives you a chance to review `.ralph/prd.json` before execution. If you want to skip the approval prompt:
+
+```bash
+ralph flow change --yes
+```
+
+**Common Options:**
+
+```bash
+# Change request flow with custom task count
+ralph flow change --task-count 5-10
+
+# New project flow with specific template
+ralph flow new --template python
+
+# Generate tasks but don't execute (review only)
+ralph flow change --dry-run
+
+# Use a different Claude model
+ralph flow change --model opus
+```
+
 **Option A: Manual Task Creation**
 
 1. Open `.ralph/prd.json` in your editor.
