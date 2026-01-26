@@ -1,0 +1,182 @@
+{
+  "$schema": "https://ralph-orchestrator.dev/schemas/prd.schema.json",
+  "project": "User Authentication System",
+  "branchName": "ralph/add-user-auth",
+  "description": "Implement JWT-based user authentication with login, logout, and protected routes",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Add JWT dependency and auth configuration",
+      "description": "Install PyJWT package and create auth configuration module with JWT settings. The configuration should support environment-based secrets.",
+      "acceptanceCriteria": [
+        "PyJWT listed in pyproject.toml dependencies",
+        "File `src/config/auth.py` exists with JWT_SECRET_KEY and JWT_EXPIRATION settings",
+        "JWT_SECRET_KEY loaded from environment variable",
+        "Run `uv run python -c \"import jwt; from src.config.auth import settings; print(settings.JWT_SECRET_KEY[:5])\"` - exits with code 0"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-002",
+      "title": "Create User model with password hashing",
+      "description": "Implement User SQLAlchemy model with hashed password storage. Use bcrypt for password hashing.",
+      "acceptanceCriteria": [
+        "File `src/models/user.py` exists",
+        "User model has id, email, hashed_password, created_at fields",
+        "Password is never stored in plain text",
+        "Run `uv run pytest tests/models/test_user.py -v` - exits with code 0"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-003",
+      "title": "Implement AuthService with token operations",
+      "description": "Create AuthService class with methods for creating and verifying JWT tokens, and password validation.",
+      "acceptanceCriteria": [
+        "File `src/services/auth.py` exists",
+        "AuthService.create_token(user_id) returns valid JWT string",
+        "AuthService.verify_token(token) returns user_id or raises exception",
+        "AuthService.verify_password(plain, hashed) returns boolean",
+        "Run `uv run pytest tests/services/test_auth.py -v` - exits with code 0"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "subtasks": [
+        {
+          "id": "T-003.1",
+          "title": "Implement create_token method",
+          "acceptanceCriteria": [
+            "Token contains user_id claim",
+            "Token contains exp claim with configured expiration"
+          ],
+          "passes": false,
+          "notes": ""
+        },
+        {
+          "id": "T-003.2",
+          "title": "Implement verify_token method",
+          "acceptanceCriteria": [
+            "Returns user_id on valid token",
+            "Raises AuthenticationError on expired token",
+            "Raises AuthenticationError on invalid signature"
+          ],
+          "passes": false,
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "id": "T-004",
+      "title": "Create POST /api/auth/register endpoint",
+      "description": "Implement user registration endpoint that creates a new user with hashed password and returns JWT token.",
+      "acceptanceCriteria": [
+        "POST /api/auth/register accepts {email, password}",
+        "Returns 201 with {token, user: {id, email}} on success",
+        "Returns 400 if email already exists",
+        "Returns 422 if password is too short (< 8 chars)",
+        "Run `uv run pytest tests/api/test_auth_register.py -v` - exits with code 0"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-005",
+      "title": "Create POST /api/auth/login endpoint",
+      "description": "Implement login endpoint that validates credentials and returns JWT token.",
+      "acceptanceCriteria": [
+        "POST /api/auth/login accepts {email, password}",
+        "Returns 200 with {token, user: {id, email}} on valid credentials",
+        "Returns 401 with {detail: 'Invalid credentials'} on invalid password",
+        "Returns 401 with {detail: 'Invalid credentials'} on unknown email",
+        "Run `uv run pytest tests/api/test_auth_login.py -v` - exits with code 0"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-006",
+      "title": "Implement auth middleware for protected routes",
+      "description": "Create FastAPI dependency that validates JWT from Authorization header and injects current user.",
+      "acceptanceCriteria": [
+        "File `src/middleware/auth.py` exists",
+        "get_current_user dependency extracts and validates Bearer token",
+        "Returns 401 if no token provided",
+        "Returns 401 if token is invalid or expired",
+        "Run `uv run pytest tests/middleware/test_auth.py -v` - exits with code 0"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-007",
+      "title": "Create GET /api/auth/me endpoint",
+      "description": "Implement endpoint that returns current user info, demonstrating protected route pattern.",
+      "acceptanceCriteria": [
+        "GET /api/auth/me requires Authorization header",
+        "Returns 200 with {id, email, created_at} when authenticated",
+        "Returns 401 when not authenticated",
+        "Run `uv run pytest tests/api/test_auth_me.py -v` - exits with code 0"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-008",
+      "title": "Add login form to frontend",
+      "description": "Create React login form component with email/password fields and error handling.",
+      "acceptanceCriteria": [
+        "File `frontend/src/components/LoginForm.tsx` exists",
+        "Form has email and password input fields",
+        "Form shows error message on failed login",
+        "Form redirects to dashboard on successful login",
+        "Run `cd frontend && npx tsc --noEmit` - exits with code 0",
+        "agent-browser: open /login - LoginForm renders with email and password fields"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-009",
+      "title": "Add auth context and protected routes to frontend",
+      "description": "Create React auth context that manages token storage and provides login/logout functions. Implement ProtectedRoute component.",
+      "acceptanceCriteria": [
+        "File `frontend/src/context/AuthContext.tsx` exists",
+        "AuthProvider stores token in localStorage",
+        "useAuth hook returns {user, login, logout, isAuthenticated}",
+        "ProtectedRoute redirects to /login if not authenticated",
+        "Run `cd frontend && npm test` - exits with code 0",
+        "agent-browser: open /dashboard without auth - redirects to /login"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-010",
+      "title": "End-to-end login flow verification",
+      "description": "Verify complete login flow works from frontend through backend.",
+      "acceptanceCriteria": [
+        "agent-browser: open /login - form renders",
+        "agent-browser: fill email with 'test@example.com'",
+        "agent-browser: fill password with 'testpassword123'",
+        "agent-browser: click 'Sign In' - redirects to /dashboard",
+        "agent-browser: open /dashboard - shows user info",
+        "agent-browser: console shows no errors",
+        "Run `uv run pytest tests/ -v --tb=short` - all tests pass"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://ralph-orchestrator.dev/schemas/ralph-config.schema.json
+# ============================================================
+# RALPH CONFIGURATION - MINIMAL TEMPLATE
+# ============================================================
+# This is the minimal configuration required to run Ralph.
+# Suitable for simple projects or as a starting point.
+#
+# Schema: https://ralph-orchestrator.dev/schemas/ralph-config.schema.json
+# ============================================================
+
+version: "1"
+
+# ============================================================
+# TASK SOURCE
+# ============================================================
+task_source:
+  type: prd_json
+  path: .ralph/prd.json
+
+# ============================================================
+# GATES
+# ============================================================
+# At minimum, define one gate to verify task completion.
+gates:
+  full:
+    - name: test
+      cmd: "npm test"          # Adjust for your stack
+      when: package.json       # Condition: run if file exists
+      timeout_seconds: 300
+      fatal: true
+
+# ============================================================
+# GIT
+# ============================================================
+git:
+  base_branch: main

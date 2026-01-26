@@ -1,0 +1,33 @@
+{
+  "$schema": "https://ralph-orchestrator.dev/schemas/prd.schema.json",
+  "project": "Project Name",
+  "branchName": "ralph/feature-name",
+  "description": "Brief description of the feature or change request",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "First task title (action-oriented)",
+      "description": "What to do and why. Include context that helps the implementation agent understand the goal.",
+      "acceptanceCriteria": [
+        "File `path/to/file.py` exists",
+        "Run `command` - exits with code 0",
+        "API endpoint returns expected response"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-002",
+      "title": "Second task title",
+      "description": "Description with implementation details.",
+      "acceptanceCriteria": [
+        "Criterion 1",
+        "Criterion 2"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

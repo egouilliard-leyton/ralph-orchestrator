@@ -1,0 +1,708 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ralph-orchestrator.dev/schemas/cli.schema.json",
+  "title": "Ralph CLI Schema",
+  "description": "Schema documenting Ralph CLI commands, options, and exit codes",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "CLI schema version"
+    },
+    "global_options": {
+      "$ref": "#/definitions/GlobalOptions"
+    },
+    "commands": {
+      "type": "object",
+      "properties": {
+        "init": { "$ref": "#/definitions/InitCommand" },
+        "run": { "$ref": "#/definitions/RunCommand" },
+        "verify": { "$ref": "#/definitions/VerifyCommand" },
+        "autopilot": { "$ref": "#/definitions/AutopilotCommand" },
+        "scan": { "$ref": "#/definitions/ScanCommand" }
+      },
+      "additionalProperties": false
+    },
+    "exit_codes": {
+      "$ref": "#/definitions/ExitCodes"
+    }
+  },
+  "definitions": {
+    "GlobalOptions": {
+      "type": "object",
+      "description": "Options available to all commands",
+      "properties": {
+        "config": {
+          "type": "object",
+          "properties": {
+            "short": { "const": "-c" },
+            "type": { "const": "PATH" },
+            "default": { "const": ".ralph/ralph.yml" },
+            "description": { "const": "Path to configuration file" }
+          }
+        },
+        "session_dir": {
+          "type": "object",
+          "properties": {
+            "type": { "const": "PATH" },
+            "default": { "const": ".ralph-session" },
+            "description": { "const": "Session directory location" }
+          }
+        },
+        "verbose": {
+          "type": "object",
+          "properties": {
+            "short": { "const": "-v" },
+            "type": { "const": "FLAG" },
+            "default": { "const": false },
+            "description": { "const": "Enable verbose output" }
+          }
+        },
+        "debug": {
+          "type": "object",
+          "properties": {
+            "type": { "const": "FLAG" },
+            "default": { "const": false },
+            "description": { "const": "Enable debug logging" }
+          }
+        },
+        "quiet": {
+          "type": "object",
+          "properties": {
+            "short": { "const": "-q" },
+            "type": { "const": "FLAG" },
+            "default": { "const": false },
+            "description": { "const": "Suppress non-essential output" }
+          }
+        },
+        "version": {
+          "type": "object",
+          "properties": {
+            "short": { "const": "-V" },
+            "type": { "const": "FLAG" },
+            "description": { "const": "Show version and exit" }
+          }
+        },
+        "help": {
+          "type": "object",
+          "properties": {
+            "short": { "const": "-h" },
+            "type": { "const": "FLAG" },
+            "description": { "const": "Show help and exit" }
+          }
+        }
+      }
+    },
+    "InitCommand": {
+      "type": "object",
+      "description": "Initialize repository with Ralph configuration",
+      "properties": {
+        "synopsis": { "const": "ralph init [OPTIONS]" },
+        "requires_config": { "const": false },
+        "options": {
+          "type": "object",
+          "properties": {
+            "template": {
+              "type": "object",
+              "properties": {
+                "short": { "const": "-t" },
+                "type": { "const": "ENUM" },
+                "values": {
+                  "type": "array",
+                  "items": { "enum": ["auto", "minimal", "python", "node", "fullstack"] }
+                },
+                "default": { "const": "auto" },
+                "description": { "const": "Template to use for configuration" }
+              }
+            },
+            "force": {
+              "type": "object",
+              "properties": {
+                "short": { "const": "-f" },
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Overwrite existing configuration" }
+              }
+            },
+            "no_agents_md": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Skip AGENTS.md creation" }
+              }
+            },
+            "no_prd": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Skip prd.json template creation" }
+              }
+            },
+            "output_dir": {
+              "type": "object",
+              "properties": {
+                "short": { "const": "-o" },
+                "type": { "const": "PATH" },
+                "default": { "const": ".ralph" },
+                "description": { "const": "Output directory for config" }
+              }
+            }
+          }
+        },
+        "exit_codes": {
+          "type": "object",
+          "properties": {
+            "0": { "const": "Success" },
+            "1": { "const": "File already exists (without --force)" },
+            "2": { "const": "Template not found" },
+            "3": { "const": "Validation failed" }
+          }
+        }
+      }
+    },
+    "RunCommand": {
+      "type": "object",
+      "description": "Execute verified task loop",
+      "properties": {
+        "synopsis": { "const": "ralph run [OPTIONS]" },
+        "requires_config": { "const": true },
+        "options": {
+          "type": "object",
+          "properties": {
+            "prd_json": {
+              "type": "object",
+              "properties": {
+                "short": { "const": "-p" },
+                "type": { "const": "PATH" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Path to prd.json task file" }
+              }
+            },
+            "cr": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "PATH" },
+                "description": { "const": "Path to CR markdown (compat mode)" }
+              }
+            },
+            "latest_cr": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Find and use latest CR file" }
+              }
+            },
+            "task": {
+              "type": "object",
+              "properties": {
+                "short": { "const": "-t" },
+                "type": { "const": "STRING" },
+                "description": { "const": "Run only specific task ID" }
+              }
+            },
+            "from_task": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "STRING" },
+                "description": { "const": "Start from specific task ID" }
+              }
+            },
+            "max_iterations": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "INT" },
+                "default": { "const": 30 },
+                "description": { "const": "Maximum task loop iterations" }
+              }
+            },
+            "post_verify": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "BOOL" },
+                "default": { "const": true },
+                "description": { "const": "Run post-completion verification" }
+              }
+            },
+            "ui_verify": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "BOOL" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Run UI verification" }
+              }
+            },
+            "robot_verify": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "BOOL" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Run Robot Framework tests" }
+              }
+            },
+            "gates": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "ENUM" },
+                "values": {
+                  "type": "array",
+                  "items": { "enum": ["build", "full", "none"] }
+                },
+                "default": { "const": "full" },
+                "description": { "const": "Gate level to run" }
+              }
+            },
+            "model_impl": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "STRING" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Model for implementation agent" }
+              }
+            },
+            "model_test": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "STRING" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Model for test-writing agent" }
+              }
+            },
+            "model_review": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "STRING" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Model for review agent" }
+              }
+            },
+            "timeout": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "INT" },
+                "default": { "const": 1800 },
+                "description": { "const": "Timeout per Claude call (seconds)" }
+              }
+            },
+            "env": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "ENUM" },
+                "values": {
+                  "type": "array",
+                  "items": { "enum": ["dev", "prod"] }
+                },
+                "default": { "const": "dev" },
+                "description": { "const": "Environment mode" }
+              }
+            },
+            "resume": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Resume from existing session" }
+              }
+            },
+            "dry_run": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Parse tasks, don't execute" }
+              }
+            }
+          }
+        },
+        "exit_codes": {
+          "type": "object",
+          "properties": {
+            "0": { "const": "All tasks completed successfully" },
+            "1": { "const": "Configuration error" },
+            "2": { "const": "Task source error (invalid prd.json)" },
+            "3": { "const": "Task execution failed (max iterations)" },
+            "4": { "const": "Gate failure (fatal gate)" },
+            "5": { "const": "Post-verification failed" },
+            "6": { "const": "Checksum tampering detected" },
+            "7": { "const": "User abort (Ctrl+C)" },
+            "8": { "const": "Claude CLI error" },
+            "9": { "const": "Service startup failure" }
+          }
+        }
+      }
+    },
+    "VerifyCommand": {
+      "type": "object",
+      "description": "Run post-completion verification only",
+      "properties": {
+        "synopsis": { "const": "ralph verify [OPTIONS]" },
+        "requires_config": { "const": true },
+        "options": {
+          "type": "object",
+          "properties": {
+            "gates": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "ENUM" },
+                "values": {
+                  "type": "array",
+                  "items": { "enum": ["build", "full", "none"] }
+                },
+                "default": { "const": "full" },
+                "description": { "const": "Gate level to run" }
+              }
+            },
+            "ui": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "BOOL" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Run UI tests" }
+              }
+            },
+            "robot": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "BOOL" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Run Robot tests" }
+              }
+            },
+            "env": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "ENUM" },
+                "values": {
+                  "type": "array",
+                  "items": { "enum": ["dev", "prod"] }
+                },
+                "default": { "const": "dev" },
+                "description": { "const": "Environment mode" }
+              }
+            },
+            "fix": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Attempt to fix failures" }
+              }
+            },
+            "fix_iterations": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "INT" },
+                "default": { "const": 10 },
+                "description": { "const": "Max fix iterations" }
+              }
+            },
+            "skip_services": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Skip service startup (use existing)" }
+              }
+            },
+            "base_url": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "URL" },
+                "description": { "const": "Override base URL for tests" }
+              }
+            }
+          }
+        },
+        "exit_codes": {
+          "type": "object",
+          "properties": {
+            "0": { "const": "All verification passed" },
+            "1": { "const": "Configuration error" },
+            "4": { "const": "Gate failure" },
+            "5": { "const": "UI test failure" },
+            "6": { "const": "Robot test failure" },
+            "9": { "const": "Service startup failure" }
+          }
+        }
+      }
+    },
+    "AutopilotCommand": {
+      "type": "object",
+      "description": "Automated self-improvement pipeline",
+      "properties": {
+        "synopsis": { "const": "ralph autopilot [OPTIONS]" },
+        "requires_config": { "const": true },
+        "options": {
+          "type": "object",
+          "properties": {
+            "reports": {
+              "type": "object",
+              "properties": {
+                "short": { "const": "-r" },
+                "type": { "const": "PATH" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Directory containing reports" }
+              }
+            },
+            "report": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "PATH" },
+                "description": { "const": "Specific report file to use" }
+              }
+            },
+            "dry_run": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Analyze only, don't execute" }
+              }
+            },
+            "create_pr": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "BOOL" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Create PR on completion" }
+              }
+            },
+            "branch": {
+              "type": "object",
+              "properties": {
+                "short": { "const": "-b" },
+                "type": { "const": "STRING" },
+                "default": { "const": "(auto)" },
+                "description": { "const": "Branch name to use" }
+              }
+            },
+            "no_prd": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Skip PRD generation (use existing tasks)" }
+              }
+            },
+            "prd_mode": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "ENUM" },
+                "values": {
+                  "type": "array",
+                  "items": { "enum": ["autonomous", "interactive"] }
+                },
+                "default": { "const": "autonomous" },
+                "description": { "const": "PRD generation mode" }
+              }
+            },
+            "task_count": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "RANGE" },
+                "default": { "const": "8-15" },
+                "description": { "const": "Target task count (e.g., '8-15')" }
+              }
+            },
+            "analysis_model": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "STRING" },
+                "default": { "const": "(from config)" },
+                "description": { "const": "Model for analysis phase" }
+              }
+            },
+            "recent_days": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "INT" },
+                "default": { "const": 7 },
+                "description": { "const": "Exclude items fixed in last N days" }
+              }
+            }
+          }
+        },
+        "exit_codes": {
+          "type": "object",
+          "properties": {
+            "0": { "const": "Autopilot completed successfully" },
+            "1": { "const": "Configuration error" },
+            "10": { "const": "No reports found" },
+            "11": { "const": "Analysis failed" },
+            "12": { "const": "PRD generation failed" },
+            "13": { "const": "Task generation failed" },
+            "14": { "const": "Git operation failed" },
+            "15": { "const": "PR creation failed" }
+          }
+        }
+      }
+    },
+    "ScanCommand": {
+      "type": "object",
+      "description": "Preflight environment check",
+      "properties": {
+        "synopsis": { "const": "ralph scan [OPTIONS]" },
+        "requires_config": { "const": false },
+        "options": {
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Show fix instructions for missing tools" }
+              }
+            },
+            "json": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Output results as JSON" }
+              }
+            },
+            "check": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "LIST" },
+                "default": { "const": "all" },
+                "description": { "const": "Specific checks: claude, git, gh, python, node, robot" }
+              }
+            },
+            "strict": {
+              "type": "object",
+              "properties": {
+                "type": { "const": "FLAG" },
+                "default": { "const": false },
+                "description": { "const": "Fail on warnings (not just errors)" }
+              }
+            }
+          }
+        },
+        "checks": {
+          "type": "object",
+          "description": "Available checks and their requirements",
+          "properties": {
+            "claude": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "All commands" },
+                "severity": { "const": "ERROR" },
+                "description": { "const": "Claude CLI installed and authenticated" }
+              }
+            },
+            "git": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "All commands" },
+                "severity": { "const": "ERROR" },
+                "description": { "const": "Git available and in a repository" }
+              }
+            },
+            "gh": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "Autopilot PR creation" },
+                "severity": { "const": "WARNING" },
+                "description": { "const": "GitHub CLI for PR creation" }
+              }
+            },
+            "python": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "Python projects" },
+                "severity": { "const": "CONDITIONAL" },
+                "description": { "const": "Python/uv for Python gates" }
+              }
+            },
+            "node": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "Node projects" },
+                "severity": { "const": "CONDITIONAL" },
+                "description": { "const": "Node/npm for Node gates" }
+              }
+            },
+            "agent_browser": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "UI tests" },
+                "severity": { "const": "WARNING" },
+                "description": { "const": "Agent-browser for UI verification" }
+              }
+            },
+            "robot": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "Robot tests" },
+                "severity": { "const": "WARNING" },
+                "description": { "const": "Robot Framework and Browser library" }
+              }
+            },
+            "config": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "run/verify commands" },
+                "severity": { "const": "ERROR" },
+                "description": { "const": "Valid ralph.yml exists" }
+              }
+            },
+            "tasks": {
+              "type": "object",
+              "properties": {
+                "required_for": { "const": "run command" },
+                "severity": { "const": "WARNING" },
+                "description": { "const": "Valid prd.json exists" }
+              }
+            }
+          }
+        },
+        "exit_codes": {
+          "type": "object",
+          "properties": {
+            "0": { "const": "All checks passed (or warnings only without --strict)" },
+            "1": { "const": "One or more required tools missing" },
+            "2": { "const": "Configuration invalid" },
+            "3": { "const": "Warnings present (with --strict)" }
+          }
+        }
+      }
+    },
+    "ExitCodes": {
+      "type": "object",
+      "description": "Complete exit code reference",
+      "properties": {
+        "global": {
+          "type": "object",
+          "properties": {
+            "0": { "const": "Success" },
+            "1": { "const": "Configuration error" },
+            "2": { "const": "Task source error" },
+            "3": { "const": "Task execution failed (max iterations)" },
+            "4": { "const": "Gate failure (fatal)" },
+            "5": { "const": "Post-verification failed" },
+            "6": { "const": "Checksum tampering detected" },
+            "7": { "const": "User abort (Ctrl+C)" },
+            "8": { "const": "Claude CLI error" },
+            "9": { "const": "Service startup failure" }
+          }
+        },
+        "autopilot": {
+          "type": "object",
+          "properties": {
+            "10": { "const": "No reports found" },
+            "11": { "const": "Analysis failed" },
+            "12": { "const": "PRD generation failed" },
+            "13": { "const": "Task generation failed" },
+            "14": { "const": "Git operation failed" },
+            "15": { "const": "PR creation failed" }
+          }
+        }
+      }
+    }
+  }
+}

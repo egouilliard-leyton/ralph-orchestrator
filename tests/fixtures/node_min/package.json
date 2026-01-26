@@ -1,0 +1,14 @@
+{
+  "name": "fixture-node-min",
+  "version": "1.0.0",
+  "description": "Minimal Node.js fixture for Ralph orchestrator testing",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node --test src/*.test.js",
+    "lint": "echo 'Lint passed'",
+    "build": "echo 'Build completed'"
+  },
+  "keywords": ["fixture", "test"],
+  "license": "MIT"
+}

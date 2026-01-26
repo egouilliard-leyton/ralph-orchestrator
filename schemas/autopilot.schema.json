@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ralph-orchestrator.dev/schemas/autopilot.schema.json",
+  "title": "Ralph Autopilot Schemas",
+  "description": "Schemas for Ralph autopilot mode artifacts",
+  "definitions": {
+    "AnalysisOutput": {
+      "type": "object",
+      "description": "Output from report analysis phase (stored in .ralph/autopilot/analysis.json)",
+      "required": [
+        "priority_item",
+        "description",
+        "rationale",
+        "acceptance_criteria",
+        "branch_name",
+        "analysis_timestamp"
+      ],
+      "properties": {
+        "priority_item": {
+          "type": "string",
+          "description": "The #1 priority item identified from the report",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of what needs to be done",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Why this item was prioritized over others",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "description": "High-level criteria for completion",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "branch_name": {
+          "type": "string",
+          "description": "Suggested git branch name (kebab-case)",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9/_-]*$",
+          "maxLength": 100
+        },
+        "analysis_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the analysis was performed"
+        },
+        "source_report": {
+          "type": "string",
+          "description": "Path to the report that was analyzed"
+        },
+        "excluded_items": {
+          "type": "array",
+          "description": "Items considered but not selected",
+          "items": {
+            "type": "object",
+            "properties": {
+              "item": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "model_used": {
+          "type": "string",
+          "description": "Model used for analysis"
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["anthropic", "openai", "openrouter", "gateway"],
+          "description": "API provider used"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AutopilotRun": {
+      "type": "object",
+      "description": "Record of an autopilot run (stored in .ralph/autopilot/runs/<id>.json)",
+      "required": [
+        "run_id",
+        "started_at",
+        "status"
+      ],
+      "properties": {
+        "run_id": {
+          "type": "string",
+          "description": "Unique run identifier",
+          "pattern": "^[0-9]{8}-[0-9]{6}-[a-f0-9]+$"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["running", "completed", "failed", "aborted"]
+        },
+        "analysis_path": {
+          "type": "string",
+          "description": "Path to analysis.json used"
+        },
+        "prd_path": {
+          "type": "string",
+          "description": "Path to generated PRD markdown"
+        },
+        "tasks_path": {
+          "type": "string",
+          "description": "Path to generated prd.json"
+        },
+        "branch_name": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Session ID from the verified execution phase"
+        },
+        "tasks_completed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tasks_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pr_created": {
+          "type": "boolean"
+        },
+        "pr_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "failure_reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PRDMetadata": {
+      "type": "object",
+      "description": "Metadata prepended to generated PRD markdown",
+      "properties": {
+        "generated_by": {
+          "type": "string",
+          "const": "ralph-autopilot"
+        },
+        "generated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "source_analysis": {
+          "type": "string",
+          "description": "Path to analysis.json"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["autonomous", "interactive"]
+        }
+      }
+    }
+  }
+}

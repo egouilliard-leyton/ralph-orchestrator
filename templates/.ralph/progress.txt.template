@@ -1,0 +1,34 @@
+# Ralph Progress Log
+
+## Codebase Patterns
+<!-- 
+Patterns discovered during runs - agents should check this FIRST before each task.
+Add new patterns as they are discovered.
+-->
+
+---
+
+<!-- 
+Progress entries will be appended below.
+Format for each entry:
+
+## [YYYY-MM-DD HH:MM:SS] - T-XXX: Task Title
+
+### What was implemented
+- Change 1
+- Change 2
+
+### Files changed
+- path/to/file1.py
+- path/to/file2.ts
+
+### Verification
+- `command1` ✓
+- `command2` ✓
+
+### Learnings for future iterations
+- Learning 1
+- Learning 2
+
+---
+-->

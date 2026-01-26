@@ -1,0 +1,205 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ralph-orchestrator.dev/schemas/session.schema.json",
+  "title": "Ralph Session Schema",
+  "description": "Schema for Ralph session state files in .ralph-session/",
+  "definitions": {
+    "SessionMetadata": {
+      "type": "object",
+      "description": "Session metadata stored in session.json",
+      "required": [
+        "session_id",
+        "session_token",
+        "started_at",
+        "task_source",
+        "task_source_type",
+        "status"
+      ],
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "Unique session identifier",
+          "pattern": "^[0-9]{8}-[0-9]{6}-[a-f0-9]+$"
+        },
+        "session_token": {
+          "type": "string",
+          "description": "Token used for signal validation",
+          "pattern": "^ralph-[0-9]{8}-[0-9]{6}-[a-f0-9]+$"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when session started"
+        },
+        "ended_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when session ended (if complete)"
+        },
+        "task_source": {
+          "type": "string",
+          "description": "Path to the task source file"
+        },
+        "task_source_type": {
+          "type": "string",
+          "enum": ["prd_json", "cr_markdown"],
+          "description": "Type of task source"
+        },
+        "config_path": {
+          "type": "string",
+          "description": "Path to ralph.yml configuration"
+        },
+        "git_branch": {
+          "type": "string",
+          "description": "Current git branch"
+        },
+        "git_commit": {
+          "type": "string",
+          "description": "Initial git commit hash"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["running", "completed", "failed", "aborted"],
+          "description": "Current session status"
+        },
+        "current_task": {
+          "type": "string",
+          "description": "Currently executing task ID"
+        },
+        "completed_tasks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of completed task IDs"
+        },
+        "pending_tasks": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of pending task IDs"
+        },
+        "total_iterations": {
+          "type": "integer",
+          "description": "Total iterations executed"
+        },
+        "failure_reason": {
+          "type": "string",
+          "description": "Reason for failure (if status is failed)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskStatus": {
+      "type": "object",
+      "description": "Task status stored in task-status.json",
+      "required": ["checksum", "last_updated", "tasks"],
+      "properties": {
+        "checksum": {
+          "type": "string",
+          "description": "SHA-256 checksum for tamper detection",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "last_updated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of last update"
+        },
+        "tasks": {
+          "type": "object",
+          "description": "Map of task ID to status",
+          "additionalProperties": {
+            "$ref": "#/definitions/TaskStatusEntry"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskStatusEntry": {
+      "type": "object",
+      "required": ["passes"],
+      "properties": {
+        "passes": {
+          "type": "boolean",
+          "description": "Completion status"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When task execution started"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When task was completed"
+        },
+        "iterations": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of iterations for this task"
+        },
+        "last_failure": {
+          "type": "string",
+          "description": "Last failure reason (if any)"
+        },
+        "agent_outputs": {
+          "type": "object",
+          "description": "Paths to agent output logs",
+          "properties": {
+            "implementation": { "type": "string" },
+            "test_writing": { "type": "string" },
+            "review": { "type": "string" }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "TimelineEvent": {
+      "type": "object",
+      "description": "Event in timeline.jsonl",
+      "required": ["ts", "event"],
+      "properties": {
+        "ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp"
+        },
+        "event": {
+          "type": "string",
+          "enum": [
+            "session_start",
+            "session_end",
+            "task_start",
+            "task_complete",
+            "task_failed",
+            "agent_start",
+            "agent_complete",
+            "agent_failed",
+            "gates_run",
+            "gate_pass",
+            "gate_fail",
+            "service_start",
+            "service_ready",
+            "service_failed",
+            "ui_test_start",
+            "ui_test_pass",
+            "ui_test_fail",
+            "fix_loop_start",
+            "fix_loop_iteration",
+            "fix_loop_end",
+            "checksum_verified",
+            "checksum_failed"
+          ],
+          "description": "Event type"
+        },
+        "session_id": { "type": "string" },
+        "task_id": { "type": "string" },
+        "role": { "type": "string" },
+        "signal": { "type": "string" },
+        "gate": { "type": "string" },
+        "status": { "type": "string" },
+        "duration_ms": { "type": "integer" },
+        "error": { "type": "string" },
+        "details": { "type": "object" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

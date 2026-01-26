@@ -1,0 +1,13 @@
+[project]
+name = "fixture-autopilot-min"
+version = "0.1.0"
+description = "Minimal autopilot fixture for Ralph orchestrator testing"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

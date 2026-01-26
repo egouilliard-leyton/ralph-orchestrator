@@ -1,0 +1,55 @@
+# Ralph Configuration - Python Minimal Fixture
+# Used for integration testing of the Ralph orchestrator
+
+version: "1"
+
+task_source:
+  type: prd_json
+  path: .ralph/prd.json
+
+gates:
+  build:
+    - name: syntax
+      cmd: "python -m py_compile src/main.py"
+      when: pyproject.toml
+      timeout_seconds: 30
+      fatal: true
+
+  full:
+    - name: pytest
+      cmd: "python -m pytest tests/ -x --tb=short -q"
+      when: pyproject.toml
+      timeout_seconds: 120
+      fatal: true
+
+test_paths:
+  - tests/**
+  - test_*.py
+
+agents:
+  implementation:
+    model: mock-model
+    timeout: 300
+  test_writing:
+    model: mock-model
+    timeout: 300
+    allowed_tools:
+      - Read
+      - Write
+      - Glob
+      - LS
+  review:
+    model: mock-model
+    timeout: 300
+    allowed_tools:
+      - Read
+      - Glob
+      - LS
+
+git:
+  base_branch: main
+
+limits:
+  max_iterations: 5
+  claude_timeout: 300
+  post_verify_iterations: 3

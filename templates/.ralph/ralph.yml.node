@@ -1,0 +1,206 @@
+# yaml-language-server: $schema=https://ralph-orchestrator.dev/schemas/ralph-config.schema.json
+# ============================================================
+# RALPH CONFIGURATION - NODE.JS TEMPLATE
+# ============================================================
+# This template is for Node.js/TypeScript projects using npm.
+# Customize the commands and paths below.
+#
+# Schema: https://ralph-orchestrator.dev/schemas/ralph-config.schema.json
+# ============================================================
+
+version: "1"
+
+# ============================================================
+# TASK SOURCE
+# ============================================================
+task_source:
+  type: prd_json
+  path: .ralph/prd.json
+
+# ============================================================
+# SERVICES (optional)
+# ============================================================
+# Uncomment if your project has services to verify:
+#
+# services:
+#   backend:
+#     start:
+#       dev: "npm run dev"
+#       prod: "npm run start"
+#     port: 3000
+#     health:
+#       - /health
+#       - /api/health
+#     timeout: 30
+#
+#   frontend:
+#     build: "npm run build"
+#     serve:
+#       dev: "npm run dev"
+#       prod: "npm run preview"
+#     port: 5173
+#     timeout: 30
+
+# ============================================================
+# GATES
+# ============================================================
+gates:
+  build:
+    - name: tsc
+      cmd: "npx tsc --noEmit"
+      when: tsconfig.json
+      timeout_seconds: 120
+      fatal: true
+
+    - name: lint
+      cmd: "npm run lint"
+      when: package.json
+      timeout_seconds: 120
+      fatal: false
+
+  full:
+    - name: tsc
+      cmd: "npx tsc --noEmit"
+      when: tsconfig.json
+      timeout_seconds: 120
+      fatal: true
+
+    - name: lint
+      cmd: "npm run lint"
+      when: package.json
+      timeout_seconds: 120
+      fatal: false
+
+    - name: test
+      cmd: "npm test"
+      when: package.json
+      timeout_seconds: 300
+      fatal: true
+
+    - name: build
+      cmd: "npm run build"
+      when: package.json
+      timeout_seconds: 300
+      fatal: true
+
+# ============================================================
+# TEST PATH GUARDRAILS
+# ============================================================
+test_paths:
+  - "**/__tests__/**"
+  - "**/*.test.*"
+  - "**/*.spec.*"
+  - "**/tests/**"
+  - "**/cypress/**"
+  - "**/playwright/**"
+  - "**/e2e/**"
+
+# ============================================================
+# UI VERIFICATION
+# ============================================================
+# Enable if you have browser-based tests
+ui:
+  agent_browser:
+    enabled: false
+    # script: tests/e2e/smoke.sh
+
+  robot:
+    enabled: false
+    # suite: tests/robot
+    # variables:
+    #   HEADLESS: "true"
+
+# ============================================================
+# AGENT CONFIGURATION
+# ============================================================
+agents:
+  implementation:
+    model: claude-opus-4-5-20251101
+    timeout: 1800
+
+  test_writing:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - Edit
+      - Write
+      - LS
+
+  review:
+    model: haiku
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - LS
+
+  fix:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+
+  planning:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - LS
+
+# ============================================================
+# LIMITS
+# ============================================================
+limits:
+  claude_timeout: 1800
+  max_iterations: 30
+  post_verify_iterations: 10
+  ui_fix_iterations: 10
+  robot_fix_iterations: 10
+
+# ============================================================
+# AUTOPILOT
+# ============================================================
+autopilot:
+  enabled: false
+  reports_dir: ./reports
+  branch_prefix: ralph/
+  create_pr: true
+
+  analysis:
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+    recent_days: 7
+
+  prd:
+    mode: autonomous
+    output_dir: ./tasks
+
+  tasks:
+    output: .ralph/prd.json
+    min_count: 8
+    max_count: 15
+
+  memory:
+    progress: .ralph/progress.txt
+    archive: .ralph/archive
+
+# ============================================================
+# GIT / PR
+# ============================================================
+git:
+  base_branch: main
+  remote: origin
+
+pr:
+  enabled: true
+  title_template: "Ralph: {priority_item}"
+  body_template: |
+    ## Summary
+    {description}
+
+    ## Tasks Completed
+    {task_summary}

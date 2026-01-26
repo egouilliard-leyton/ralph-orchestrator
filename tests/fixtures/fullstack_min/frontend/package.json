@@ -1,0 +1,11 @@
+{
+  "name": "fixture-fullstack-frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'Dev server would start'",
+    "build": "echo 'Build completed'",
+    "preview": "echo 'Preview server would start'",
+    "lint": "echo 'Lint passed'"
+  }
+}

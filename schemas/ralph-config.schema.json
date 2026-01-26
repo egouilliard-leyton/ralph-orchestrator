@@ -1,0 +1,538 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ralph-orchestrator.dev/schemas/ralph-config.schema.json",
+  "title": "Ralph Configuration Schema",
+  "description": "Schema for Ralph orchestrator configuration file (.ralph/ralph.yml)",
+  "type": "object",
+  "required": ["version", "task_source", "git"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1",
+      "description": "Schema version (must be '1')"
+    },
+    "task_source": {
+      "$ref": "#/definitions/TaskSource"
+    },
+    "services": {
+      "$ref": "#/definitions/Services"
+    },
+    "gates": {
+      "$ref": "#/definitions/Gates"
+    },
+    "test_paths": {
+      "type": "array",
+      "description": "Glob patterns for allowed test file paths (test-writing agent guardrails)",
+      "items": {
+        "type": "string"
+      },
+      "default": ["tests/**", "**/*.test.*", "**/*.spec.*"]
+    },
+    "ui": {
+      "$ref": "#/definitions/UIConfig"
+    },
+    "agents": {
+      "$ref": "#/definitions/AgentConfig"
+    },
+    "limits": {
+      "$ref": "#/definitions/Limits"
+    },
+    "autopilot": {
+      "$ref": "#/definitions/AutopilotConfig"
+    },
+    "git": {
+      "$ref": "#/definitions/GitConfig"
+    },
+    "pr": {
+      "$ref": "#/definitions/PRConfig"
+    }
+  },
+  "definitions": {
+    "TaskSource": {
+      "type": "object",
+      "description": "Configuration for task source",
+      "required": ["type", "path"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["prd_json", "cr_markdown"],
+          "description": "Type of task source (prd_json recommended)"
+        },
+        "path": {
+          "type": "string",
+          "description": "Path to task file (for prd_json) or glob pattern (for cr_markdown)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Services": {
+      "type": "object",
+      "description": "Service definitions for runtime verification",
+      "properties": {
+        "backend": {
+          "$ref": "#/definitions/BackendService"
+        },
+        "frontend": {
+          "$ref": "#/definitions/FrontendService"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/GenericService"
+      }
+    },
+    "BackendService": {
+      "type": "object",
+      "description": "Backend service configuration",
+      "required": ["start", "port"],
+      "properties": {
+        "start": {
+          "$ref": "#/definitions/StartCommands"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Port the service runs on"
+        },
+        "health": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Health check endpoints (relative URLs)"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 30,
+          "description": "Health check timeout in seconds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "FrontendService": {
+      "type": "object",
+      "description": "Frontend service configuration",
+      "required": ["serve", "port"],
+      "properties": {
+        "build": {
+          "type": "string",
+          "description": "Build command (run before serve in prod mode)"
+        },
+        "serve": {
+          "$ref": "#/definitions/StartCommands"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 30
+        }
+      },
+      "additionalProperties": false
+    },
+    "GenericService": {
+      "type": "object",
+      "description": "Generic service configuration",
+      "required": ["start", "port"],
+      "properties": {
+        "start": {
+          "$ref": "#/definitions/StartCommands"
+        },
+        "build": {
+          "type": "string"
+        },
+        "serve": {
+          "$ref": "#/definitions/StartCommands"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        },
+        "health": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 30
+        }
+      }
+    },
+    "StartCommands": {
+      "type": "object",
+      "description": "Commands for different environments",
+      "properties": {
+        "dev": {
+          "type": "string",
+          "description": "Development mode command (supports {port} placeholder)"
+        },
+        "prod": {
+          "type": "string",
+          "description": "Production mode command (supports {port} placeholder)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Gates": {
+      "type": "object",
+      "description": "Quality gate definitions",
+      "properties": {
+        "build": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Gate" },
+          "description": "Fast checks run during task loop"
+        },
+        "full": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Gate" },
+          "description": "Comprehensive checks run after task completion"
+        }
+      },
+      "required": ["full"],
+      "additionalProperties": false
+    },
+    "Gate": {
+      "type": "object",
+      "description": "Single quality gate definition",
+      "required": ["name", "cmd"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Gate identifier",
+          "pattern": "^[a-z0-9_-]+$"
+        },
+        "cmd": {
+          "type": "string",
+          "description": "Command to execute"
+        },
+        "when": {
+          "type": "string",
+          "description": "File or glob that must exist for gate to run"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600,
+          "default": 300,
+          "description": "Maximum execution time"
+        },
+        "fatal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether failure stops execution"
+        }
+      },
+      "additionalProperties": false
+    },
+    "UIConfig": {
+      "type": "object",
+      "description": "UI testing configuration",
+      "properties": {
+        "agent_browser": {
+          "$ref": "#/definitions/AgentBrowserConfig"
+        },
+        "robot": {
+          "$ref": "#/definitions/RobotConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AgentBrowserConfig": {
+      "type": "object",
+      "description": "Agent-browser UI testing configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "script": {
+          "type": "string",
+          "description": "Path to test script"
+        },
+        "tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AgentBrowserTest"
+          },
+          "description": "Inline test definitions (alternative to script)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AgentBrowserTest": {
+      "type": "object",
+      "required": ["name", "action", "expected"],
+      "properties": {
+        "name": { "type": "string" },
+        "action": { "type": "string" },
+        "expected": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "RobotConfig": {
+      "type": "object",
+      "description": "Robot Framework configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "suite": {
+          "type": "string",
+          "description": "Path to Robot test suite directory"
+        },
+        "variables": {
+          "type": "object",
+          "description": "Variables to pass to Robot",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "AgentConfig": {
+      "type": "object",
+      "description": "Agent role configurations",
+      "properties": {
+        "implementation": { "$ref": "#/definitions/AgentRole" },
+        "test_writing": { "$ref": "#/definitions/AgentRole" },
+        "review": { "$ref": "#/definitions/AgentRole" },
+        "fix": { "$ref": "#/definitions/AgentRole" },
+        "planning": { "$ref": "#/definitions/AgentRole" }
+      },
+      "additionalProperties": false
+    },
+    "AgentRole": {
+      "type": "object",
+      "description": "Configuration for an agent role",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Claude model identifier"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 7200,
+          "default": 1800,
+          "description": "Timeout per Claude call in seconds"
+        },
+        "allowed_tools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Whitelist of allowed tools (empty = all tools)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Limits": {
+      "type": "object",
+      "description": "Iteration and timeout limits",
+      "properties": {
+        "claude_timeout": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 7200,
+          "default": 1800,
+          "description": "Default timeout per Claude call"
+        },
+        "max_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 30,
+          "description": "Max task loop iterations"
+        },
+        "post_verify_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10,
+          "description": "Max runtime fix iterations"
+        },
+        "ui_fix_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10,
+          "description": "Max agent-browser fix iterations"
+        },
+        "robot_fix_iterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10,
+          "description": "Max Robot Framework fix iterations"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AutopilotConfig": {
+      "type": "object",
+      "description": "Autopilot (self-improve) configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "reports_dir": {
+          "type": "string",
+          "default": "./reports",
+          "description": "Directory containing analysis reports"
+        },
+        "branch_prefix": {
+          "type": "string",
+          "default": "ralph/",
+          "description": "Prefix for created branches"
+        },
+        "create_pr": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to create PR after completion"
+        },
+        "analysis": {
+          "$ref": "#/definitions/AnalysisConfig"
+        },
+        "prd": {
+          "$ref": "#/definitions/PRDConfig"
+        },
+        "tasks": {
+          "$ref": "#/definitions/TasksConfig"
+        },
+        "memory": {
+          "$ref": "#/definitions/MemoryConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "AnalysisConfig": {
+      "type": "object",
+      "description": "Report analysis configuration",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["anthropic", "openai", "openrouter", "gateway", "claude_cli"],
+          "default": "anthropic"
+        },
+        "model": {
+          "type": "string"
+        },
+        "recent_days": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 7,
+          "description": "Exclude items fixed in last N days"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PRDConfig": {
+      "type": "object",
+      "description": "PRD generation configuration",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["autonomous", "interactive"],
+          "default": "autonomous"
+        },
+        "output_dir": {
+          "type": "string",
+          "default": "./tasks"
+        },
+        "auto_commit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically commit generated PRD"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TasksConfig": {
+      "type": "object",
+      "description": "Task generation configuration",
+      "properties": {
+        "output": {
+          "type": "string",
+          "default": ".ralph/prd.json"
+        },
+        "min_count": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 8
+        },
+        "max_count": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 15
+        },
+        "auto_commit": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically commit generated tasks"
+        }
+      },
+      "additionalProperties": false
+    },
+    "MemoryConfig": {
+      "type": "object",
+      "description": "Progress memory configuration",
+      "properties": {
+        "progress": {
+          "type": "string",
+          "default": ".ralph/progress.txt"
+        },
+        "archive": {
+          "type": "string",
+          "default": ".ralph/archive"
+        }
+      },
+      "additionalProperties": false
+    },
+    "GitConfig": {
+      "type": "object",
+      "description": "Git configuration",
+      "required": ["base_branch"],
+      "properties": {
+        "base_branch": {
+          "type": "string",
+          "default": "main",
+          "description": "Base branch for feature branches"
+        },
+        "remote": {
+          "type": "string",
+          "default": "origin",
+          "description": "Git remote name"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PRConfig": {
+      "type": "object",
+      "description": "Pull request configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "title_template": {
+          "type": "string",
+          "default": "Ralph: {priority_item}",
+          "description": "PR title template (supports {priority_item} placeholder)"
+        },
+        "body_template": {
+          "type": "string",
+          "description": "PR body template (supports {description}, {rationale}, {task_summary} placeholders)"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

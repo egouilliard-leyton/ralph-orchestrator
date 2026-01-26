@@ -1,0 +1,31 @@
+{
+  "project": "Python Minimal Fixture",
+  "branchName": "ralph/test-fixture",
+  "description": "Test fixture for Ralph orchestrator integration testing",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Add multiply function",
+      "description": "Add a multiply function to the main module that multiplies two numbers.",
+      "acceptanceCriteria": [
+        "File `src/main.py` contains function `multiply`",
+        "Run `python -c \"from src.main import multiply; assert multiply(3, 4) == 12\"` - exits with code 0"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-002",
+      "title": "Add tests for multiply function",
+      "description": "Add unit tests for the multiply function to ensure it works correctly.",
+      "acceptanceCriteria": [
+        "File `tests/test_main.py` contains `test_multiply`",
+        "Run `python -m pytest tests/test_main.py -v -k multiply` - exits with code 0"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

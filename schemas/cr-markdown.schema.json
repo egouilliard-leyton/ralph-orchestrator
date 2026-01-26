@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ralph-orchestrator.dev/schemas/cr-markdown.schema.json",
+  "title": "Ralph CR Markdown Task Block Schema",
+  "description": "Schema for JSON task blocks embedded in Change Request (CR) markdown files. This is the legacy/compatibility format that can be imported into prd.json.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "$ref": "#/definitions/CRTask"
+  },
+  "definitions": {
+    "CRTask": {
+      "type": "object",
+      "description": "A task in CR markdown format (compatibility layer)",
+      "required": ["id", "category", "description", "steps", "passes"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Task identifier (flexible format: CR-MVP-1, TASK-001, etc.)",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "category": {
+          "type": "string",
+          "description": "Task category for grouping",
+          "enum": [
+            "setup",
+            "feature",
+            "frontend",
+            "backend",
+            "testing",
+            "documentation",
+            "integration",
+            "fix",
+            "refactor",
+            "infrastructure"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "What to do (becomes both title and description in prd.json)",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "steps": {
+          "type": "array",
+          "description": "Steps to complete (becomes acceptanceCriteria in prd.json)",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "passes": {
+          "type": "boolean",
+          "description": "Completion status"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

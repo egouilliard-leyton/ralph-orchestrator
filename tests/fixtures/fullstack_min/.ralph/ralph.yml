@@ -1,0 +1,82 @@
+# Ralph Configuration - Fullstack Minimal Fixture
+# Used for integration testing with services, gates, and UI verification
+
+version: "1"
+
+task_source:
+  type: prd_json
+  path: .ralph/prd.json
+
+services:
+  backend:
+    start:
+      dev: "python -m http.server {port}"
+      prod: "python -m http.server {port}"
+    port: 8000
+    health:
+      - /
+    timeout: 10
+
+  frontend:
+    build: "echo 'Build placeholder'"
+    serve:
+      dev: "cd frontend && echo 'Dev server on port {port}'"
+      prod: "cd frontend && echo 'Preview server on port {port}'"
+    port: 5173
+    timeout: 10
+
+gates:
+  build:
+    - name: python-syntax
+      cmd: "python -m py_compile src/api/main.py"
+      when: pyproject.toml
+      timeout_seconds: 30
+      fatal: true
+
+  full:
+    - name: pytest
+      cmd: "python -m pytest tests/ -x --tb=short -q"
+      when: pyproject.toml
+      timeout_seconds: 120
+      fatal: true
+
+    - name: frontend-lint
+      cmd: "cd frontend && npm run lint"
+      when: frontend/package.json
+      timeout_seconds: 60
+      fatal: false
+
+test_paths:
+  - tests/**
+  - frontend/**/*.test.*
+  - frontend/**/*.spec.*
+  - frontend/**/__tests__/**
+
+agents:
+  implementation:
+    model: mock-model
+    timeout: 300
+  test_writing:
+    model: mock-model
+    timeout: 300
+    allowed_tools:
+      - Read
+      - Write
+      - Glob
+      - LS
+  review:
+    model: mock-model
+    timeout: 300
+    allowed_tools:
+      - Read
+      - Glob
+      - LS
+
+git:
+  base_branch: main
+
+limits:
+  max_iterations: 5
+  claude_timeout: 300
+  post_verify_iterations: 3
+  ui_fix_iterations: 3

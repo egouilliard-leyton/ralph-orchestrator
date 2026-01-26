@@ -1,0 +1,31 @@
+{
+  "project": "Node.js Minimal Fixture",
+  "branchName": "ralph/test-node-fixture",
+  "description": "Test fixture for Ralph orchestrator integration testing with Node.js",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Add multiply function",
+      "description": "Add a multiply function to the index module that multiplies two numbers.",
+      "acceptanceCriteria": [
+        "File `src/index.js` exports function `multiply`",
+        "Run `node -e \"import('./src/index.js').then(m => console.assert(m.multiply(3, 4) === 12))\"` - exits with code 0"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-002",
+      "title": "Add tests for multiply function",
+      "description": "Add tests for the multiply function.",
+      "acceptanceCriteria": [
+        "File `src/index.test.js` contains test for `multiply`",
+        "Run `npm test` - exits with code 0"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "project": "Fullstack Minimal Fixture",
+  "branchName": "ralph/test-fullstack-fixture",
+  "description": "Test fixture for Ralph orchestrator with fullstack project",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Add API endpoint for version",
+      "description": "Add a /version endpoint to the API that returns the app version.",
+      "acceptanceCriteria": [
+        "File `src/api/main.py` handles GET /version",
+        "Endpoint returns JSON with version field"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-002",
+      "title": "Add tests for version endpoint",
+      "description": "Add tests for the version endpoint.",
+      "acceptanceCriteria": [
+        "File `tests/test_api.py` contains `test_version_endpoint`",
+        "Run `python -m pytest tests/ -k version` - exits with code 0"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "T-003",
+      "title": "Add version display to frontend",
+      "description": "Display the API version in the frontend App component.",
+      "acceptanceCriteria": [
+        "File `frontend/src/App.tsx` displays version",
+        "Version fetched from /version endpoint"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+# Ralph Configuration - Autopilot Minimal Fixture
+# Used for integration testing of autopilot pipeline
+
+version: "1"
+
+task_source:
+  type: prd_json
+  path: .ralph/prd.json
+
+gates:
+  build:
+    - name: syntax
+      cmd: "python -m py_compile src/main.py"
+      when: pyproject.toml
+      timeout_seconds: 30
+      fatal: true
+
+  full:
+    - name: syntax-all
+      cmd: "python -m py_compile src/main.py"
+      when: pyproject.toml
+      timeout_seconds: 60
+      fatal: true
+
+test_paths:
+  - tests/**
+
+agents:
+  implementation:
+    model: mock-model
+    timeout: 300
+  test_writing:
+    model: mock-model
+    timeout: 300
+  review:
+    model: mock-model
+    timeout: 300
+
+autopilot:
+  enabled: true
+  reports_dir: ./reports
+  branch_prefix: ralph/
+  create_pr: false  # Disabled for testing
+  
+  analysis:
+    provider: anthropic
+    model: mock-model
+    recent_days: 7
+  
+  prd:
+    mode: autonomous
+    output_dir: ./tasks
+    auto_commit: false
+  
+  tasks:
+    output: .ralph/prd.json
+    min_count: 2
+    max_count: 10
+    auto_commit: false
+  
+  memory:
+    progress: .ralph/progress.txt
+    archive: .ralph/autopilot/archive
+
+git:
+  base_branch: main
+  remote: origin
+
+pr:
+  enabled: false
+  title_template: "Ralph: {priority_item}"
+
+limits:
+  max_iterations: 5
+  claude_timeout: 300

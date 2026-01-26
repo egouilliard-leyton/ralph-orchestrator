@@ -1,0 +1,18 @@
+{
+  "project": "Autopilot Fixture",
+  "branchName": "ralph/autopilot-test",
+  "description": "Placeholder tasks for autopilot testing - will be replaced by generated tasks",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Placeholder task",
+      "description": "This task will be replaced by autopilot-generated tasks",
+      "acceptanceCriteria": [
+        "This placeholder will be replaced"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

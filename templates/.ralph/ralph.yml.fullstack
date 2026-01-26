@@ -1,0 +1,212 @@
+# yaml-language-server: $schema=https://ralph-orchestrator.dev/schemas/ralph-config.schema.json
+# ============================================================
+# RALPH CONFIGURATION - FULLSTACK TEMPLATE
+# ============================================================
+# This template is for projects with both a Python backend and
+# a Node.js frontend. Customize the commands and paths below.
+#
+# Schema: https://ralph-orchestrator.dev/schemas/ralph-config.schema.json
+# Docs:   https://ralph-orchestrator.dev/docs/configuration
+# ============================================================
+
+version: "1"
+
+# ============================================================
+# TASK SOURCE
+# ============================================================
+task_source:
+  type: prd_json
+  path: .ralph/prd.json
+
+# ============================================================
+# SERVICES
+# ============================================================
+services:
+  backend:
+    start:
+      dev: "uv run uvicorn src.api.main:app --reload --host 127.0.0.1 --port {port}"
+      prod: "uv run uvicorn src.api.main:app --host 127.0.0.1 --port {port}"
+    port: 8000
+    health:
+      - /health
+    timeout: 30
+
+  frontend:
+    build: "cd frontend && npm run build"
+    serve:
+      dev: "cd frontend && npm run dev -- --host 127.0.0.1 --port {port}"
+      prod: "cd frontend && npm run preview -- --host 127.0.0.1 --port {port}"
+    port: 5173
+    timeout: 30
+
+# ============================================================
+# GATES
+# ============================================================
+gates:
+  build:
+    - name: mypy
+      cmd: "uv run mypy src/ --ignore-missing-imports --no-error-summary"
+      when: pyproject.toml
+      timeout_seconds: 120
+      fatal: true
+
+    - name: tsc
+      cmd: "cd frontend && npx tsc --noEmit"
+      when: frontend/tsconfig.json
+      timeout_seconds: 120
+      fatal: true
+
+  full:
+    - name: pytest
+      cmd: "uv run pytest -x --tb=short -q"
+      when: pyproject.toml
+      timeout_seconds: 300
+      fatal: true
+
+    - name: mypy
+      cmd: "uv run mypy src/ --ignore-missing-imports --no-error-summary"
+      when: pyproject.toml
+      timeout_seconds: 120
+      fatal: true
+
+    - name: tsc
+      cmd: "cd frontend && npx tsc --noEmit"
+      when: frontend/tsconfig.json
+      timeout_seconds: 120
+      fatal: true
+
+    - name: lint
+      cmd: "cd frontend && npm run lint"
+      when: frontend/package.json
+      timeout_seconds: 120
+      fatal: false
+
+    - name: build
+      cmd: "cd frontend && npm run build"
+      when: frontend/package.json
+      timeout_seconds: 300
+      fatal: true
+
+# ============================================================
+# TEST PATH GUARDRAILS
+# ============================================================
+test_paths:
+  - tests/**
+  - test_scripts/**
+  - frontend/**/__tests__/**
+  - frontend/**/*.test.*
+  - frontend/**/*.spec.*
+  - frontend/**/e2e/**
+
+# ============================================================
+# UI VERIFICATION
+# ============================================================
+ui:
+  agent_browser:
+    enabled: true
+    script: ui_tests/agent-browser/smoke_test.sh
+
+  robot:
+    enabled: true
+    suite: ui_tests/robot
+    variables:
+      HEADLESS: "true"
+      BROWSER: chromium
+
+# ============================================================
+# AGENT CONFIGURATION
+# ============================================================
+agents:
+  implementation:
+    model: claude-opus-4-5-20251101
+    timeout: 1800
+
+  test_writing:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - Edit
+      - Write
+      - LS
+
+  review:
+    model: haiku
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - LS
+
+  fix:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+
+  planning:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - LS
+
+# ============================================================
+# LIMITS
+# ============================================================
+limits:
+  claude_timeout: 1800
+  max_iterations: 30
+  post_verify_iterations: 10
+  ui_fix_iterations: 10
+  robot_fix_iterations: 10
+
+# ============================================================
+# AUTOPILOT
+# ============================================================
+autopilot:
+  enabled: false
+  reports_dir: ./reports
+  branch_prefix: ralph/
+  create_pr: true
+
+  analysis:
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+    recent_days: 7
+
+  prd:
+    mode: autonomous
+    output_dir: ./tasks
+
+  tasks:
+    output: .ralph/prd.json
+    min_count: 8
+    max_count: 15
+
+  memory:
+    progress: .ralph/progress.txt
+    archive: .ralph/archive
+
+# ============================================================
+# GIT / PR
+# ============================================================
+git:
+  base_branch: main
+  remote: origin
+
+pr:
+  enabled: true
+  title_template: "Ralph: {priority_item}"
+  body_template: |
+    ## Summary
+    {description}
+
+    ## Rationale
+    {rationale}
+
+    ## Tasks Completed
+    {task_summary}

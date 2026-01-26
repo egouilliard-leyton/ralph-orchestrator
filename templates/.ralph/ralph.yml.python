@@ -1,0 +1,184 @@
+# yaml-language-server: $schema=https://ralph-orchestrator.dev/schemas/ralph-config.schema.json
+# ============================================================
+# RALPH CONFIGURATION - PYTHON TEMPLATE
+# ============================================================
+# This template is for Python-only projects using pytest, mypy,
+# and uv for dependency management. Customize as needed.
+#
+# Schema: https://ralph-orchestrator.dev/schemas/ralph-config.schema.json
+# ============================================================
+
+version: "1"
+
+# ============================================================
+# TASK SOURCE
+# ============================================================
+task_source:
+  type: prd_json
+  path: .ralph/prd.json
+
+# ============================================================
+# SERVICES (optional)
+# ============================================================
+# Uncomment if your project has a backend service to verify:
+#
+# services:
+#   backend:
+#     start:
+#       dev: "uv run uvicorn src.main:app --reload --port {port}"
+#       prod: "uv run uvicorn src.main:app --port {port}"
+#     port: 8000
+#     health:
+#       - /health
+#     timeout: 30
+
+# ============================================================
+# GATES
+# ============================================================
+gates:
+  build:
+    - name: mypy
+      cmd: "uv run mypy src/ --ignore-missing-imports --no-error-summary"
+      when: pyproject.toml
+      timeout_seconds: 120
+      fatal: true
+
+  full:
+    - name: pytest
+      cmd: "uv run pytest -x --tb=short -q"
+      when: pyproject.toml
+      timeout_seconds: 300
+      fatal: true
+
+    - name: mypy
+      cmd: "uv run mypy src/ --ignore-missing-imports --no-error-summary"
+      when: pyproject.toml
+      timeout_seconds: 120
+      fatal: true
+
+    - name: ruff-check
+      cmd: "uv run ruff check src/"
+      when: pyproject.toml
+      timeout_seconds: 60
+      fatal: false
+
+    - name: ruff-format
+      cmd: "uv run ruff format --check src/"
+      when: pyproject.toml
+      timeout_seconds: 60
+      fatal: false
+
+# ============================================================
+# TEST PATH GUARDRAILS
+# ============================================================
+test_paths:
+  - tests/**
+  - test_scripts/**
+  - "**/test_*.py"
+  - "**/*_test.py"
+
+# ============================================================
+# UI VERIFICATION
+# ============================================================
+# Disabled for Python-only projects
+ui:
+  agent_browser:
+    enabled: false
+
+  robot:
+    enabled: false
+
+# ============================================================
+# AGENT CONFIGURATION
+# ============================================================
+agents:
+  implementation:
+    model: claude-opus-4-5-20251101
+    timeout: 1800
+
+  test_writing:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - Edit
+      - Write
+      - LS
+
+  review:
+    model: haiku
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - LS
+
+  fix:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+
+  planning:
+    model: claude-sonnet-4-5-20250929
+    timeout: 1800
+    allowed_tools:
+      - Read
+      - Grep
+      - Glob
+      - LS
+
+# ============================================================
+# LIMITS
+# ============================================================
+limits:
+  claude_timeout: 1800
+  max_iterations: 30
+  post_verify_iterations: 10
+  ui_fix_iterations: 5
+  robot_fix_iterations: 5
+
+# ============================================================
+# AUTOPILOT
+# ============================================================
+autopilot:
+  enabled: false
+  reports_dir: ./reports
+  branch_prefix: ralph/
+  create_pr: true
+
+  analysis:
+    provider: anthropic
+    model: claude-opus-4-5-20251101
+    recent_days: 7
+
+  prd:
+    mode: autonomous
+    output_dir: ./tasks
+
+  tasks:
+    output: .ralph/prd.json
+    min_count: 8
+    max_count: 15
+
+  memory:
+    progress: .ralph/progress.txt
+    archive: .ralph/archive
+
+# ============================================================
+# GIT / PR
+# ============================================================
+git:
+  base_branch: main
+  remote: origin
+
+pr:
+  enabled: true
+  title_template: "Ralph: {priority_item}"
+  body_template: |
+    ## Summary
+    {description}
+
+    ## Tasks Completed
+    {task_summary}
