@@ -57,12 +57,82 @@ ralph run --dry-run           # Preview tasks without execution
 ralph run                     # Execute verified task loop
 ```
 
+### One-Command Flows
+
+```bash
+ralph flow change             # Chat → tasks → validate → approve → run
+ralph flow new                # Init → chat → tasks → validate → approve → run
+```
+
+These flows open an interactive Claude session to discuss your requirements, then automatically generate tasks, validate them, show a preview for approval, and execute the verified loop.
+
 ### Autopilot Mode
 
 ```bash
 ralph autopilot --dry-run     # Analyze reports and plan
 ralph autopilot               # Full autonomous pipeline
 ```
+
+## UI Testing (Browser Automation)
+
+Ralph includes integrated UI testing capabilities using two frameworks:
+
+### Agent-Browser (Claude-Powered)
+
+Agent-browser is an AI-powered browser automation tool that executes natural language test instructions. Claude controls the browser to perform actions and verify expected outcomes.
+
+**Configuration in `.ralph/ralph.yml`:**
+
+```yaml
+ui:
+  agent_browser:
+    enabled: true
+    tests:
+      - name: login_test
+        action: "Click the login button and enter username 'test@example.com'"
+        expected: "User should see the dashboard with welcome message"
+      - name: navigation_test
+        action: "Navigate to the settings page using the sidebar menu"
+        expected: "Settings page should display user preferences"
+```
+
+Or use a script for more complex scenarios:
+
+```yaml
+ui:
+  agent_browser:
+    enabled: true
+    script: ".ralph/ui-tests.sh"
+```
+
+**Features:**
+- Natural language test definitions
+- Automatic screenshot capture on failure
+- Test artifacts saved to `.ralph-session/artifacts/agent-browser/`
+
+### Robot Framework
+
+For keyword-driven acceptance testing, Ralph integrates with Robot Framework using the Browser library (Chromium).
+
+```yaml
+ui:
+  robot:
+    enabled: true
+    suite: "tests/acceptance"
+    variables:
+      TIMEOUT: "10s"
+```
+
+**Running UI tests:**
+
+```bash
+ralph verify --ui              # Run agent-browser tests
+ralph verify --robot           # Run Robot Framework tests
+ralph verify --ui --robot      # Run both
+ralph verify --base-url http://localhost:3000  # Override base URL
+```
+
+UI tests run after quality gates pass and services are started. Failed tests trigger automatic fix loops when `--fix` is enabled.
 
 ## Configuration
 
