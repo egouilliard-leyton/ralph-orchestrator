@@ -5,6 +5,7 @@ Provides prompt builders for different agent roles:
 - Test-writing: Write tests for implemented features (guardrailed)
 - Review: Code review against acceptance criteria (read-only)
 - Fix: Fix issues identified by gates or review
+- UI Testing: Browser exploration and Robot Framework test generation (guardrailed)
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ class AgentRole(str, Enum):
     UI_IMPLEMENTATION = "ui_implementation"
     ROBOT_PLANNING = "robot_planning"
     ROBOT_IMPLEMENTATION = "robot_implementation"
+    UI_TESTING = "ui_testing"
 
 
 @dataclass
@@ -44,6 +46,7 @@ def build_implementation_prompt(
     session_token: str,
     project_description: str = "",
     agents_md_content: str = "",
+    report_path: Optional[str] = None,
 ) -> str:
     """Build prompt for implementation agent.
     
@@ -52,6 +55,7 @@ def build_implementation_prompt(
         session_token: Session token for completion signal.
         project_description: Project description from prd.json.
         agents_md_content: Content of AGENTS.md for context.
+        report_path: Path to write agent report (append-only).
         
     Returns:
         Complete prompt string.
@@ -102,6 +106,22 @@ Please address these issues to get approval.
 {agents_md_content}
 """
     
+    report_section = ""
+    if report_path:
+        report_section = f"""
+## Report Output
+
+Write a brief summary of your work to: {report_path}
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+"""
+    
     return f"""# Implementation Task
 
 You are implementing a task for a software project.
@@ -117,7 +137,7 @@ You are implementing a task for a software project.
 
 {criteria_list}
 {agents_section}
-{feedback_section}
+{feedback_section}{report_section}
 ## Instructions
 
 1. Implement the required changes to satisfy all acceptance criteria
@@ -144,6 +164,7 @@ def build_test_writing_prompt(
     session_token: str,
     test_paths: List[str],
     project_description: str = "",
+    report_path: Optional[str] = None,
 ) -> str:
     """Build prompt for test-writing agent (guardrailed).
     
@@ -152,6 +173,7 @@ def build_test_writing_prompt(
         session_token: Session token for completion signal.
         test_paths: Allowed test file patterns.
         project_description: Project description.
+        report_path: Path to write agent report (append-only).
         
     Returns:
         Complete prompt string.
@@ -159,17 +181,41 @@ def build_test_writing_prompt(
     criteria_list = "\n".join(f"- {c}" for c in task.acceptance_criteria)
     test_paths_list = "\n".join(f"- {p}" for p in test_paths)
     
+    report_section = ""
+    if report_path:
+        report_section = f"""
+## Report Output
+
+Write a brief summary of your work to: {report_path}
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Test Writing - [timestamp]
+- Tests created/modified
+- Coverage notes
+- Issues encountered (if any)
+```
+"""
+    
     return f"""# Test-Writing Task (GUARDRAILED)
 
 You are writing tests for implemented features.
 
-## IMPORTANT RESTRICTIONS
+## CRITICAL FILE RESTRICTIONS
 
-You may ONLY modify files matching these patterns:
+You may ONLY create/modify files matching these patterns:
 {test_paths_list}
 
-DO NOT modify any source files outside test directories.
-Any modifications to source files will be automatically reverted.
+**ALLOWED:**
+- Python test files (e.g., `tests/**/test_*.py`, `tests/**/*_test.py`)
+- Test fixture files, conftest.py
+
+**FORBIDDEN (will be reverted):**
+- ANY markdown files (*.md) in tests/ - DO NOT create documentation in tests/
+- ANY source files outside test directories
+- Test result documents or reports in tests/
+
+Any modifications to forbidden paths will be **automatically reverted**.
 
 ## Project
 {project_description}
@@ -182,12 +228,33 @@ Any modifications to source files will be automatically reverted.
 
 {criteria_list}
 
+## TEST QUALITY RULES
+
+You MUST follow these rules to avoid writing broken tests:
+
+1. **Only assert on REAL public APIs**: Do not invent or assume attributes, methods, or behaviors that don't exist. Read the actual source code to verify what the API provides before writing assertions.
+
+2. **Prefer black-box assertions**: Test observable behavior rather than internal implementation:
+   - CLI output and exit codes
+   - File existence and content
+   - Schema/structure validity
+   - HTTP responses
+   - Log output
+   Avoid testing private attributes or internal state unless explicitly required.
+
+3. **Keep scope tight**: Only write tests that verify the task's acceptance criteria. Do not add speculative tests for features not mentioned in the criteria.
+
+4. **Verify imports work**: Before using any import in a test, confirm the module and symbol exist in the codebase.
+
+5. **No documentation in tests/**: Do not create `.md` files, test reports, or narrative documents in `tests/`. Write only executable test code.
+{report_section}
 ## Instructions
 
-1. Write comprehensive tests for the implemented feature
-2. Cover happy path and edge cases
-3. Only create/modify files in test directories
-4. Follow project testing conventions
+1. Read the implementation to understand what APIs and behaviors actually exist
+2. Write focused tests that validate each acceptance criterion
+3. Cover happy path and realistic edge cases
+4. Only create/modify files in test directories (no .md files!)
+5. Follow project testing conventions
 
 ## Completion Signal
 
@@ -208,6 +275,7 @@ def build_review_prompt(
     task: TaskContext,
     session_token: str,
     project_description: str = "",
+    report_path: Optional[str] = None,
 ) -> str:
     """Build prompt for review agent (read-only).
     
@@ -215,11 +283,28 @@ def build_review_prompt(
         task: Task context with description and criteria.
         session_token: Session token for completion signal.
         project_description: Project description.
+        report_path: Path to write agent report (append-only).
         
     Returns:
         Complete prompt string.
     """
     criteria_list = "\n".join(f"- [ ] {c}" for c in task.acceptance_criteria)
+    
+    report_section = ""
+    if report_path:
+        report_section = f"""
+## Report Output
+
+Write your review findings to: {report_path}
+This is an append-only file. Add a timestamped section for each review.
+Format:
+```
+## Review - [timestamp]
+- Criteria checked: [list]
+- Result: APPROVED / REJECTED
+- Issues (if any): [list]
+```
+"""
     
     return f"""# Code Review Task (READ-ONLY)
 
@@ -241,7 +326,7 @@ You may NOT modify any files. You can only:
 ## Acceptance Criteria Checklist
 
 {criteria_list}
-
+{report_section}
 ## Instructions
 
 1. Review the implementation against each acceptance criterion
@@ -432,6 +517,168 @@ IMPORTANT: The session token must be exactly: {session_token}
 """
 
 
+def build_ui_testing_prompt(
+    task: TaskContext,
+    session_token: str,
+    base_url: str,
+    robot_suite_path: str,
+    project_description: str = "",
+    report_path: Optional[str] = None,
+) -> str:
+    """Build prompt for UI testing agent (guardrailed to Robot test files).
+    
+    This agent uses browser-use (agent-browser CLI) to explore the frontend,
+    verify implementations visually, and generate/update Robot Framework tests.
+    
+    Args:
+        task: Task context with description and criteria.
+        session_token: Session token for completion signal.
+        base_url: Base URL for the frontend (e.g., http://localhost:3000).
+        robot_suite_path: Path where Robot tests can be written (e.g., tests/robot).
+        project_description: Project description.
+        report_path: Path to write agent report (append-only).
+        
+    Returns:
+        Complete prompt string.
+    """
+    criteria_list = "\n".join(f"- {c}" for c in task.acceptance_criteria)
+    
+    report_section = ""
+    if report_path:
+        report_section = f"""
+## Report Output
+
+Write a brief summary of your work to: {report_path}
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## UI Testing - [timestamp]
+- Pages visited
+- Verifications performed
+- Tests generated/updated
+- Issues found (if any)
+```
+"""
+    
+    return f"""# UI Testing Task (GUARDRAILED)
+
+You are testing frontend changes using browser automation and generating Robot Framework tests.
+
+## CRITICAL FILE RESTRICTIONS
+
+You may ONLY create/modify files in:
+- `{robot_suite_path}/**/*.robot`
+
+**ALLOWED:**
+- Robot Framework test files (.robot) in the configured suite path
+- Reading any files to understand the implementation
+
+**FORBIDDEN (will be reverted):**
+- ANY source files (*.py, *.ts, *.tsx, *.js, *.jsx)
+- ANY files outside `{robot_suite_path}/`
+- Modifying existing non-test code
+
+Any modifications to forbidden paths will be **automatically reverted**.
+
+## Project
+{project_description}
+
+## Task: {task.task_id} - {task.title}
+
+{task.description}
+
+## Acceptance Criteria
+
+{criteria_list}
+
+## Tools Available
+
+You have access to the `agent-browser` CLI for browser interaction:
+
+```bash
+# Open a URL in the browser
+agent-browser open {base_url}
+
+# Take a snapshot of the current page (accessibility tree)
+agent-browser snapshot
+
+# Click on an element (use ref from snapshot)
+agent-browser click --ref <element_ref> --element "description"
+
+# Type text into an element
+agent-browser type --ref <element_ref> --text "text to type"
+
+# Take a screenshot
+agent-browser screenshot --filename "screenshot.png"
+
+# Navigate to a URL
+agent-browser navigate --url "{base_url}/some/path"
+```
+
+## Robot Framework Test Template
+
+When generating tests, use this structure:
+
+```robot
+*** Settings ***
+Library    Browser
+Suite Setup    Open Browser    {base_url}    chromium    headless=true
+Suite Teardown    Close Browser
+
+*** Test Cases ***
+[Test Name Based on Acceptance Criteria]
+    [Documentation]    Verifies: [specific acceptance criterion]
+    [Test steps using Browser library keywords]
+    
+*** Keywords ***
+[Reusable keywords if needed]
+```
+{report_section}
+## Instructions
+
+1. **Explore the Frontend**
+   - Use `agent-browser open {base_url}` to start
+   - Navigate to pages/components affected by the task
+   - Use `agent-browser snapshot` to understand the page structure
+
+2. **Verify Each Acceptance Criterion**
+   - Systematically check each criterion visually
+   - Document what you observe vs what was expected
+   - Take screenshots of important states
+
+3. **Generate/Update Robot Framework Tests**
+   - Create `.robot` files in `{robot_suite_path}/` that capture verified behavior
+   - Name tests descriptively based on what they verify
+   - Keep tests focused and maintainable
+   - Use Browser library keywords (New Browser, New Page, Click, Fill Text, etc.)
+
+4. **Output Results**
+   - Report pass/fail for each acceptance criterion
+   - List all tests generated/updated
+
+## Completion Signal
+
+When you have completed UI testing, output:
+
+```
+<ui-tests-done session="{session_token}">
+## Verification Results
+- [criterion 1]: PASS/FAIL - [observation]
+- [criterion 2]: PASS/FAIL - [observation]
+
+## Tests Generated
+- {robot_suite_path}/[test_file_1.robot]: [description]
+- {robot_suite_path}/[test_file_2.robot]: [description]
+
+## Issues Found
+- [any issues that need attention]
+</ui-tests-done>
+```
+
+IMPORTANT: The session token must be exactly: {session_token}
+"""
+
+
 def get_role_description(role: AgentRole) -> str:
     """Get human-readable description of an agent role.
     
@@ -450,6 +697,7 @@ def get_role_description(role: AgentRole) -> str:
         AgentRole.UI_IMPLEMENTATION: "UI implementation agent (fix UI issues)",
         AgentRole.ROBOT_PLANNING: "Robot planning agent (analyze Robot test failures)",
         AgentRole.ROBOT_IMPLEMENTATION: "Robot implementation agent (fix Robot test issues)",
+        AgentRole.UI_TESTING: "UI testing agent (browser exploration and Robot test generation)",
     }
     return descriptions.get(role, str(role))
 
@@ -470,6 +718,10 @@ def get_allowed_tools_for_role(role: AgentRole) -> List[str]:
     # Test-writing role (limited write access)
     if role == AgentRole.TEST_WRITING:
         return ["Read", "Write", "Glob", "LS", "Grep"]
+    
+    # UI testing role (limited write access + shell for agent-browser CLI)
+    if role == AgentRole.UI_TESTING:
+        return ["Read", "Write", "Glob", "LS", "Shell"]
     
     # Implementation and fix roles (full access)
     return ["Read", "Write", "Glob", "LS", "Grep", "Shell", "Edit"]

@@ -164,3 +164,61 @@ class TestPathNormalization:
         guardrail = FilePathGuardrail(test_paths=["./tests/**"])
         
         assert guardrail.is_allowed("tests/test_main.py")
+
+
+class TestMarkdownGuardrail:
+    """Tests for markdown file restrictions in test directories."""
+    
+    @pytest.fixture
+    def guardrail(self):
+        """Create guardrail with default test patterns."""
+        return FilePathGuardrail(
+            test_paths=["tests/**", "**/*.test.*", "**/*.spec.*"]
+        )
+    
+    def test_markdown_in_tests_directory_blocked(self, guardrail):
+        """Markdown files in tests/ directory are blocked."""
+        # These should be detected as markdown in test dir
+        assert guardrail._is_markdown_in_test_dir("tests/T001_test_plan.md")
+        assert guardrail._is_markdown_in_test_dir("tests/unit/README.md")
+        assert guardrail._is_markdown_in_test_dir("tests/documentation.MD")  # Case insensitive
+    
+    def test_markdown_outside_tests_not_blocked(self, guardrail):
+        """Markdown files outside test directories are not blocked by this check."""
+        # These are not in test directories
+        assert not guardrail._is_markdown_in_test_dir("README.md")
+        assert not guardrail._is_markdown_in_test_dir("docs/guide.md")
+        assert not guardrail._is_markdown_in_test_dir("src/README.md")
+    
+    def test_non_markdown_in_tests_allowed(self, guardrail):
+        """Non-markdown files in tests/ are not blocked by markdown check."""
+        assert not guardrail._is_markdown_in_test_dir("tests/test_main.py")
+        assert not guardrail._is_markdown_in_test_dir("tests/conftest.py")
+        assert not guardrail._is_markdown_in_test_dir("tests/__init__.py")
+    
+    def test_report_path_allowed(self, guardrail):
+        """Files in .ralph-session/reports/ are allowed (internal artifacts)."""
+        # The internal artifact check should allow these
+        assert guardrail._is_internal_artifact(".ralph-session/reports/T-001/test-writing.md")
+        assert guardrail._is_internal_artifact(".ralph-session/reports/T-001/review.md")
+    
+    def test_markdown_in_multiple_test_dirs(self):
+        """Markdown files blocked in all configured test directories."""
+        guardrail = FilePathGuardrail(
+            test_paths=["tests/**", "backend/tests/**", "frontend/__tests__/**"]
+        )
+        
+        # Should be blocked in all test directories
+        assert guardrail._is_markdown_in_test_dir("tests/docs.md")
+        assert guardrail._is_markdown_in_test_dir("backend/tests/notes.md")
+        assert guardrail._is_markdown_in_test_dir("frontend/__tests__/readme.md")
+    
+    def test_test_code_files_still_allowed(self, guardrail):
+        """Test code files (.py, .ts, etc.) are still allowed in test dirs."""
+        # Python test files
+        assert guardrail.is_allowed("tests/test_main.py")
+        assert guardrail.is_allowed("tests/unit/test_service.py")
+        
+        # TypeScript/JavaScript test files
+        assert guardrail.is_allowed("src/App.test.tsx")
+        assert guardrail.is_allowed("src/utils.spec.ts")

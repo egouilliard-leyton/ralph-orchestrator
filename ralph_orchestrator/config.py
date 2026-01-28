@@ -112,6 +112,34 @@ class LimitsConfig:
 
 
 @dataclass
+class BrowserUseConfig:
+    """Browser-use UI testing configuration for agent-browser CLI."""
+    enabled: bool = False
+    base_url: Optional[str] = None
+    timeout: int = 120
+    screenshot_on_failure: bool = True
+
+
+@dataclass
+class RobotConfig:
+    """Robot Framework configuration."""
+    enabled: bool = False
+    suite: Optional[str] = None
+    variables: Dict[str, str] = field(default_factory=dict)
+    auto_generate: bool = False
+
+
+@dataclass
+class UIConfig:
+    """UI testing configuration."""
+    browser_use: BrowserUseConfig = field(default_factory=BrowserUseConfig)
+    robot: RobotConfig = field(default_factory=RobotConfig)
+    frontend_paths: List[str] = field(
+        default_factory=lambda: ["frontend/**", "src/components/**", "src/pages/**", "*.tsx", "*.jsx"]
+    )
+
+
+@dataclass
 class GitConfig:
     """Git configuration."""
     base_branch: str = "main"
@@ -164,6 +192,9 @@ class RalphConfig:
     backend: Optional[ServiceConfig] = None
     frontend: Optional[ServiceConfig] = None
     
+    # UI testing configuration
+    ui: UIConfig = field(default_factory=UIConfig)
+    
     # Agent roles
     agents: Dict[str, AgentRoleConfig] = field(default_factory=dict)
     
@@ -204,6 +235,24 @@ class RalphConfig:
     def get_agent_config(self, role: str) -> AgentRoleConfig:
         """Get configuration for an agent role."""
         return self.agents.get(role, AgentRoleConfig())
+    
+    @property
+    def has_frontend_service(self) -> bool:
+        """Check if a frontend service is configured.
+        
+        Returns True if a frontend service is defined in the services section,
+        indicating that UI testing may be applicable.
+        """
+        return self.frontend is not None
+    
+    @property
+    def browser_use_config(self) -> BrowserUseConfig:
+        """Get the browser-use configuration for UI testing.
+        
+        Returns the browser_use configuration from the UI section,
+        or a default disabled configuration if not set.
+        """
+        return self.ui.browser_use
 
 
 def _parse_gate(gate_data: Dict[str, Any]) -> GateConfig:
@@ -258,6 +307,41 @@ def _parse_git(git_data: Dict[str, Any]) -> GitConfig:
     return GitConfig(
         base_branch=git_data.get("base_branch", "main"),
         remote=git_data.get("remote", "origin"),
+    )
+
+
+def _parse_browser_use(browser_use_data: Dict[str, Any]) -> BrowserUseConfig:
+    """Parse browser-use configuration dict."""
+    return BrowserUseConfig(
+        enabled=browser_use_data.get("enabled", False),
+        base_url=browser_use_data.get("base_url"),
+        timeout=browser_use_data.get("timeout", 120),
+        screenshot_on_failure=browser_use_data.get("screenshot_on_failure", True),
+    )
+
+
+def _parse_robot_config(robot_data: Dict[str, Any]) -> RobotConfig:
+    """Parse Robot Framework configuration dict."""
+    return RobotConfig(
+        enabled=robot_data.get("enabled", False),
+        suite=robot_data.get("suite"),
+        variables=robot_data.get("variables", {}),
+        auto_generate=robot_data.get("auto_generate", False),
+    )
+
+
+def _parse_ui_config(ui_data: Dict[str, Any]) -> UIConfig:
+    """Parse UI testing configuration dict."""
+    browser_use = _parse_browser_use(ui_data.get("browser_use", {}))
+    robot = _parse_robot_config(ui_data.get("robot", {}))
+    frontend_paths = ui_data.get(
+        "frontend_paths",
+        ["frontend/**", "src/components/**", "src/pages/**", "*.tsx", "*.jsx"]
+    )
+    return UIConfig(
+        browser_use=browser_use,
+        robot=robot,
+        frontend_paths=frontend_paths,
     )
 
 
@@ -353,6 +437,9 @@ def load_config(
     for role, role_data in agents_data.items():
         agents[role] = _parse_agent_role(role_data)
     
+    # Parse UI config
+    ui = _parse_ui_config(raw_data.get("ui", {}))
+    
     # Parse limits
     limits = _parse_limits(raw_data.get("limits", {}))
     
@@ -378,6 +465,7 @@ def load_config(
         test_paths=raw_data.get("test_paths", ["tests/**", "**/*.test.*", "**/*.spec.*"]),
         backend=backend,
         frontend=frontend,
+        ui=ui,
         agents=agents,
         limits=limits,
         autopilot=autopilot,
@@ -392,3 +480,18 @@ def get_default_config_path(repo_root: Optional[Path] = None) -> Path:
     if repo_root is None:
         repo_root = Path.cwd()
     return repo_root / ".ralph" / "ralph.yml"
+
+
+def is_browser_use_enabled(config: RalphConfig) -> bool:
+    """Check if browser-use UI testing is enabled in the configuration.
+    
+    This is a convenience function for checking if the browser_use feature
+    is enabled in the UI configuration section.
+    
+    Args:
+        config: The RalphConfig instance to check.
+        
+    Returns:
+        True if browser_use is enabled, False otherwise.
+    """
+    return config.browser_use_config.enabled

@@ -239,8 +239,48 @@
         "agent_browser": {
           "$ref": "#/definitions/AgentBrowserConfig"
         },
+        "browser_use": {
+          "$ref": "#/definitions/BrowserUseConfig"
+        },
         "robot": {
           "$ref": "#/definitions/RobotConfig"
+        },
+        "frontend_paths": {
+          "type": "array",
+          "description": "Glob patterns for frontend file paths (for UI testing detection)",
+          "items": {
+            "type": "string"
+          },
+          "default": ["frontend/**", "src/components/**", "src/pages/**", "*.tsx", "*.jsx"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BrowserUseConfig": {
+      "type": "object",
+      "description": "Browser-use UI testing configuration for agent-browser CLI",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether browser-use UI testing is enabled"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "Base URL for the frontend service (e.g., http://localhost:3000)",
+          "format": "uri"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 600,
+          "default": 120,
+          "description": "Timeout in seconds for browser operations"
+        },
+        "screenshot_on_failure": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to capture screenshots when tests fail"
         }
       },
       "additionalProperties": false
@@ -293,6 +333,11 @@
           "type": "object",
           "description": "Variables to pass to Robot",
           "additionalProperties": { "type": "string" }
+        },
+        "auto_generate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow UI testing agent to create and update Robot Framework tests"
         }
       },
       "additionalProperties": false
@@ -305,7 +350,8 @@
         "test_writing": { "$ref": "#/definitions/AgentRole" },
         "review": { "$ref": "#/definitions/AgentRole" },
         "fix": { "$ref": "#/definitions/AgentRole" },
-        "planning": { "$ref": "#/definitions/AgentRole" }
+        "planning": { "$ref": "#/definitions/AgentRole" },
+        "ui_testing": { "$ref": "#/definitions/AgentRole" }
       },
       "additionalProperties": false
     },

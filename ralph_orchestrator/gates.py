@@ -146,7 +146,7 @@ class GateRunner:
             passed=exec_result.success,
             exit_code=exec_result.exit_code,
             duration_ms=exec_result.duration_ms,
-            output=exec_result.truncated_output(),
+            output=exec_result.truncated_output(max_chars=50000),  # Larger limit for gate output
             error=exec_result.error,
             timed_out=exec_result.timed_out,
             fatal=gate.fatal,
@@ -278,6 +278,11 @@ def format_gate_failure(result: GateResult) -> str:
         f"Gate '{result.name}' failed (exit code {result.exit_code})",
     ]
     
+    # Add log path so agent can read full output if needed
+    if result.log_path:
+        lines.append(f"  Full output saved to: {result.log_path}")
+        lines.append(f"  (Read this file for complete error details)")
+    
     if result.timed_out:
         lines.append(f"  Timed out after timeout limit")
     
@@ -285,13 +290,14 @@ def format_gate_failure(result: GateResult) -> str:
         lines.append(f"  Error: {result.error}")
     
     if result.output:
-        # Truncate output for display
+        # Show more output so agent sees full error context including hints
         output_lines = result.output.split("\n")
-        if len(output_lines) > 20:
-            output_preview = "\n".join(output_lines[:10] + ["..."] + output_lines[-10:])
+        if len(output_lines) > 100:
+            # Only truncate if very long (100+ lines)
+            output_preview = "\n".join(output_lines[:50] + ["... (truncated) ..."] + output_lines[-50:])
         else:
             output_preview = result.output
-        lines.append(f"  Output:\n{output_preview}")
+        lines.append(f"  Output (preview):\n{output_preview}")
     
     return "\n".join(lines)
 

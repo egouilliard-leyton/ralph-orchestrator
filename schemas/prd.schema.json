@@ -123,6 +123,16 @@
           "default": "",
           "maxLength": 5000
         },
+        "requiresTests": {
+          "type": "boolean",
+          "description": "Whether this task requires automated tests. Set to false for analysis, documentation, or configuration tasks.",
+          "default": true
+        },
+        "affectsFrontend": {
+          "type": "boolean",
+          "description": "Whether this task modifies frontend code. Triggers UI testing when true and frontend service is configured.",
+          "default": false
+        },
         "subtasks": {
           "type": "array",
           "description": "Optional subtask breakdown for complex tasks",

@@ -249,3 +249,6 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "autopilot: Autopilot-specific tests"
     )
+    config.addinivalue_line(
+        "markers", "e2e: End-to-end tests requiring running frontend and backend servers"
+    )

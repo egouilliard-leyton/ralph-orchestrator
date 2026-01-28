@@ -62,6 +62,8 @@ class Task:
     priority: int
     passes: bool = False
     notes: str = ""
+    requires_tests: bool = True
+    affects_frontend: bool = False
     subtasks: List[Subtask] = field(default_factory=list)
     
     def to_dict(self) -> Dict[str, Any]:
@@ -74,6 +76,8 @@ class Task:
             "priority": self.priority,
             "passes": self.passes,
             "notes": self.notes,
+            "requiresTests": self.requires_tests,
+            "affectsFrontend": self.affects_frontend,
         }
         if self.subtasks:
             result["subtasks"] = [s.to_dict() for s in self.subtasks]
@@ -91,6 +95,8 @@ class Task:
             priority=data.get("priority", 999),
             passes=data.get("passes", False),
             notes=data.get("notes", ""),
+            requires_tests=data.get("requiresTests", True),
+            affects_frontend=data.get("affectsFrontend", False),
             subtasks=subtasks,
         )
     
@@ -435,6 +441,8 @@ def create_task(
     acceptance_criteria: List[str],
     priority: Optional[int] = None,
     task_id: Optional[str] = None,
+    requires_tests: bool = True,
+    affects_frontend: bool = False,
     save: bool = True,
 ) -> Task:
     """Create a new task and add it to the PRD.
@@ -446,6 +454,8 @@ def create_task(
         acceptance_criteria: List of acceptance criteria.
         priority: Task priority. Defaults to max+1.
         task_id: Task ID. Defaults to auto-generated.
+        requires_tests: Whether task requires automated tests. Defaults to True.
+        affects_frontend: Whether task modifies frontend code. Defaults to False.
         save: Whether to save the PRD after adding.
         
     Returns:
@@ -466,6 +476,8 @@ def create_task(
         priority=priority,
         passes=False,
         notes="",
+        requires_tests=requires_tests,
+        affects_frontend=affects_frontend,
     )
     
     prd.tasks.append(task)

@@ -407,11 +407,11 @@ class ReportDiscovery:
     
     def find_reports(self) -> List[ReportInfo]:
         """Find all reports in directory.
-        
+
         Returns:
             List of ReportInfo sorted by modified_at (newest first).
         """
-        reports = []
+        reports: List[ReportInfo] = []
         
         if not self.reports_dir.exists():
             return reports
@@ -809,6 +809,7 @@ class LLMProvider:
 
         cmd = base + [
             "--print",
+            "--dangerously-skip-permissions",
             "--output-format",
             "json",
             "--json-schema",
@@ -2014,14 +2015,17 @@ class AutopilotOrchestrator:
         Raises:
             AnalysisError: If analysis fails.
         """
+        if not run.report_path:
+            raise AnalysisError("No report path available")
+
         self._print(f"\n▶ Analyzing report: {Path(run.report_path).name}")
-        
+
         # Create analyzer
         analyzer = ReportAnalyzer(
             config=self.config.autopilot,
             repo_root=self.repo_root,
         )
-        
+
         # Run analysis
         analysis = analyzer.analyze(Path(run.report_path))
         
@@ -2174,15 +2178,18 @@ class AutopilotOrchestrator:
         if analysis is None:
             analysis = self._load_analysis(run.analysis_path)
         
+        if not run.branch_name:
+            raise TasksGenerationError("No branch name available for task generation")
+
         generator = TasksGenerator(
             config=self.config.autopilot,
             repo_root=self.repo_root,
             branch_manager=self.branch_manager,
         )
-        
+
         # Use PRD path if available
         prd_path = Path(run.prd_path) if run.prd_path else None
-        
+
         tasks_path, task_count = generator.generate(
             prd_path=prd_path or Path("PRD.md"),  # Fallback
             branch_name=run.branch_name,
@@ -2247,10 +2254,13 @@ class AutopilotOrchestrator:
             PRCreationError: If PR creation fails.
         """
         self._print("\n▶ Creating pull request...")
-        
+
+        if not run.branch_name:
+            raise PRCreationError("No branch name available for PR creation")
+
         if analysis is None:
             analysis = self._load_analysis(run.analysis_path)
-        
+
         # Push branch first
         self._print(f"  Pushing branch to {self.config.git.remote}...")
         self.branch_manager.push_branch(run.branch_name)
