@@ -80,6 +80,8 @@ class RunOptions:
     resume: bool = False
     post_verify: bool = True
     verbose: bool = False
+    with_smoke: Optional[bool] = None  # None = use config/task defaults
+    with_robot: Optional[bool] = None  # None = use config/task defaults
 
     def to_orchestration_options(self) -> OrchestrationOptions:
         """Convert to OrchestrationOptions for the service."""
@@ -92,6 +94,8 @@ class RunOptions:
             dry_run=self.dry_run,
             resume=self.resume,
             post_verify=self.post_verify,
+            with_smoke=self.with_smoke,
+            with_robot=self.with_robot,
         )
 
 

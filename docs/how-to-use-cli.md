@@ -197,6 +197,31 @@ Execute the verified task loop.
   ralph run --gates build
   ```
 
+**UI Test Control:**
+
+Control which UI tests run during post-completion verification:
+
+- Enable smoke tests (agent-browser):
+  ```bash
+  ralph run --with-smoke --prd-json .ralph/prd.json
+  ```
+- Disable smoke tests:
+  ```bash
+  ralph run --no-smoke --prd-json .ralph/prd.json
+  ```
+- Enable Robot Framework tests:
+  ```bash
+  ralph run --with-robot --prd-json .ralph/prd.json
+  ```
+- Disable Robot Framework tests:
+  ```bash
+  ralph run --no-robot --prd-json .ralph/prd.json
+  ```
+- Run with both UI test types:
+  ```bash
+  ralph run --with-smoke --with-robot --prd-json .ralph/prd.json
+  ```
+
 ### 5. Verify Changes
 
 Run verification separately after manual changes.

@@ -244,6 +244,8 @@ class OrchestrationOptions:
     dry_run: bool = False
     resume: bool = False
     post_verify: bool = True
+    with_smoke: Optional[bool] = None  # None = use config/task defaults
+    with_robot: Optional[bool] = None  # None = use config/task defaults
 
 
 @dataclass
@@ -461,6 +463,7 @@ class OrchestrationService:
             get_feedback_for_missing_signal,
             get_feedback_for_invalid_token,
         )
+        from ..skills import SkillRouter
 
         # Emit phase change event
         self._emit_event(AgentPhaseChangedEvent(
@@ -470,26 +473,40 @@ class OrchestrationService:
         ))
         self._current_phase = "implementation"
 
+        # Detect skill for this task
+        router = SkillRouter.from_config(self.config)
+        skill = router.detect_skill(task)
+
         # Get report path for this agent/task
         report_path = str(self.session.get_report_path("implementation", task.id))
 
         agent_config = self.config.get_agent_config("implementation")
 
-        # Log agent start
+        # Log agent start with skill info
         self.exec_log.agent_start(
             role="implementation",
             model=agent_config.model,
             previous_feedback=feedback,
         )
 
+        # Log skill detection
+        if skill:
+            self.exec_log.custom(f"[SKILL] Using /{skill.skill_name} for task {task.id} ({skill.reason})")
+
         context = self._create_task_context(task, previous_feedback=feedback)
-        prompt = build_implementation_prompt(
+        base_prompt = build_implementation_prompt(
             task=context,
             session_token=self._session_token,
             project_description=self.prd.description,
             agents_md_content=self.agents_md_content,
             report_path=report_path,
         )
+
+        # Add skill prefix if detected
+        if skill:
+            prompt = router.get_skill_prompt_prefix(skill) + base_prompt
+        else:
+            prompt = base_prompt
 
         result = self.claude.invoke(
             prompt=prompt,
@@ -895,35 +912,65 @@ class OrchestrationService:
             )
             return True, False, result.output, rejection_feedback
 
+    def _should_run_smoke_tests(self) -> bool:
+        """Check if smoke tests (agent-browser) should run with CLI override.
+
+        Returns:
+            True if smoke tests should run.
+        """
+        from ..ui import is_agent_browser_enabled
+
+        # CLI override takes precedence
+        if self.options.with_smoke is False:
+            return False
+        if self.options.with_smoke is True:
+            return True
+        # Fall back to config
+        return is_agent_browser_enabled(self.config)
+
+    def _should_run_robot_tests(self) -> bool:
+        """Check if Robot Framework tests should run with CLI override.
+
+        Returns:
+            True if Robot tests should run.
+        """
+        from ..ui import is_robot_enabled
+
+        # CLI override takes precedence
+        if self.options.with_robot is False:
+            return False
+        if self.options.with_robot is True:
+            return True
+        # Fall back to config
+        return is_robot_enabled(self.config)
+
     def _should_run_ui_testing(self, task) -> bool:
         """Check if UI testing should run for this task.
-        
+
         UI testing runs when:
         - Task has affects_frontend = True
         - Config has a frontend service configured
-        - Browser-use (agent-browser) or Robot Framework is enabled in config
-        
+        - Smoke tests or Robot Framework tests are enabled (via CLI or config)
+
         Args:
             task: Task to check.
-            
+
         Returns:
             True if UI testing should run.
         """
-        from ..ui import is_agent_browser_enabled, is_robot_enabled
-        
         # Task must affect frontend
         if not task.affects_frontend:
             return False
-        
+
         # Must have frontend service configured
         if self.config.frontend is None:
             return False
-        
-        # Must have browser-use or Robot Framework enabled
-        if not is_agent_browser_enabled(self.config) and not is_robot_enabled(self.config):
-            return False
-        
-        return True
+
+        # Check CLI overrides and config for UI testing
+        smoke_enabled = self._should_run_smoke_tests()
+        robot_enabled = self._should_run_robot_tests()
+
+        return smoke_enabled or robot_enabled
 
     def _get_ui_base_url(self) -> Optional[str]:
         """Get base URL for UI testing from config.
@@ -1094,21 +1141,20 @@ class OrchestrationService:
 
     def _run_robot_tests(self, task) -> Tuple[bool, Optional[str]]:
         """Run Robot Framework tests after UI testing agent.
-        
+
         Args:
             task: Task being tested.
-            
+
         Returns:
             Tuple of (success, failure_output).
         """
         from ..ui import (
             create_robot_runner,
-            is_robot_enabled,
             format_ui_test_summary,
         )
-        
-        if not is_robot_enabled(self.config):
-            self.exec_log.custom("[ROBOT] Skipped (not enabled)")
+
+        if not self._should_run_robot_tests():
+            self.exec_log.custom("[ROBOT] Skipped (not enabled or disabled via CLI)")
             return True, None
         
         base_url = self._get_ui_base_url()

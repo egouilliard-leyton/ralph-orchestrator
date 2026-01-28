@@ -338,38 +338,118 @@ Enable automated self-improvement:
 ```yaml
 autopilot:
   enabled: true
-  
+
   # Where to find analysis reports
   reports_dir: ./reports
-  
+
   # Branch naming convention
   branch_prefix: ralph/
-  
+
   # Create PR when done
   create_pr: true
-  
+
   # Analysis settings
   analysis:
     provider: anthropic
     model: claude-opus-4-5-20251101
     recent_days: 7              # Skip items fixed recently
-  
+
   # PRD generation
   prd:
     mode: autonomous            # Don't ask questions
     output_dir: ./tasks
-  
+
   # Task generation
   tasks:
     output: .ralph/prd.json
     min_count: 8                # Minimum tasks to generate
     max_count: 15               # Maximum tasks to generate
-  
+
   # Progress tracking
   memory:
     progress: .ralph/progress.txt
     archive: .ralph/archive
 ```
+
+### 13. Configure Research Phase
+
+Control how autopilot researches your codebase before generating PRDs:
+
+```yaml
+autopilot:
+  # Research configuration
+  research:
+    enabled: true               # Enable research phase (default: true)
+
+    backend:
+      enabled: true             # Scan Python/API code
+      patterns:                 # File patterns to scan
+        - "**/*.py"
+        - "**/models/**"
+        - "**/routes/**"
+        - "**/services/**"
+        - "**/api/**"
+
+    frontend:
+      enabled: true             # Scan frontend code
+      patterns:
+        - "**/*.tsx"
+        - "**/*.jsx"
+        - "**/*.vue"
+        - "**/components/**"
+        - "**/styles/**"
+
+    web:
+      enabled: true             # Search web for docs/best practices
+      max_queries: 5            # Maximum web search queries
+```
+
+**Research Types:**
+
+| Type | Purpose | Default Patterns |
+|------|---------|------------------|
+| `backend` | Scan Python files, models, routes, services | `**/*.py`, `**/models/**`, `**/routes/**` |
+| `frontend` | Scan TSX/JSX/Vue, components, styles | `**/*.tsx`, `**/*.jsx`, `**/components/**` |
+| `web` | Search documentation and best practices | N/A (uses queries) |
+
+## Customizing Skills
+
+### 14. Configure Skill Routing
+
+Skills enable specialized Claude plugins for specific task types:
+
+```yaml
+skills:
+  enabled: true                 # Enable skill routing (default: true)
+  auto_detect: true             # Auto-detect skills from task content
+
+  # Custom skill mappings (in addition to defaults)
+  custom_mappings:
+    - skill_name: "custom-skill"
+      patterns:                 # Keywords that trigger this skill
+        - "custom keyword"
+        - "specific term"
+
+    - skill_name: "data-viz"
+      patterns:
+        - "chart"
+        - "graph"
+        - "visualization"
+```
+
+**Default Skills:**
+
+Ralph includes built-in skill detection for common task types:
+
+| Skill | Triggers | Purpose |
+|-------|----------|---------|
+| `frontend-design` | "UI", "component", "styling" | Frontend development |
+| `docx` | "document", "word", ".docx" | Word document creation |
+| `xlsx` | "spreadsheet", "excel", ".xlsx" | Spreadsheet manipulation |
+| `pdf` | "PDF", "form", "report" | PDF processing |
+| `pptx` | "presentation", "slides" | PowerPoint creation |
+
+Skills are automatically applied when task descriptions match their trigger patterns.
 
 ## Customizing Git and PR Settings
 

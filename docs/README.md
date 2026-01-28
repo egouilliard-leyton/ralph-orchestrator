@@ -34,8 +34,16 @@ Step-by-step guides for common tasks:
 
 | Guide | Description |
 |-------|-------------|
-| [How To Use Autopilot](./how-to-use-autopilot.md) | Set up automated self-improvement |
+| [How To Use Autopilot](./how-to-use-autopilot.md) | Set up automated self-improvement with research |
 | [How To Schedule Autopilot](./how-to-schedule-autopilot.md) | Run autopilot on a schedule (cron/launchd) |
+
+### Advanced Features
+
+| Feature | Description |
+|---------|-------------|
+| Research Sub-agents | Backend, frontend, and web researchers gather context before PRD generation |
+| Skill Routing | Specialized Claude plugins auto-applied based on task content |
+| UI Test Flags | Control smoke tests and Robot Framework with `--with-smoke`, `--no-smoke`, `--with-robot`, `--no-robot` |
 
 ### Troubleshooting
 

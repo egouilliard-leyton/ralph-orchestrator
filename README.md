@@ -11,7 +11,8 @@ Ralph Orchestrator (`ralph`) automates the software development lifecycle by coo
 - **Verified Task Loop** - Each task passes through implementation, test-writing, quality gates, and review phases
 - **Anti-Gaming Protection** - Session tokens and checksum verification prevent agents from bypassing quality checks
 - **Quality Gates** - Configurable build, lint, and test commands that must pass before task completion
-- **Autopilot Mode** - Fully autonomous pipeline: analyze reports, generate PRDs, create tasks, execute, and open PRs
+- **Autopilot Mode** - Fully autonomous pipeline: analyze reports, research codebase, generate PRDs, create tasks, execute, and open PRs
+- **Research Sub-agents** - Backend, frontend, and web researchers gather context before PRD generation
 - **Guardrails** - Test-writing agents are restricted to test directories only
 - **Session Management** - Full audit trail with timeline logging and artifact capture
 - **Web UI Dashboard** - Modern React-based interface for real-time monitoring (via `ralph serve`)
@@ -183,6 +184,15 @@ ralph verify --ui              # Run agent-browser tests
 ralph verify --robot           # Run Robot Framework tests
 ralph verify --ui --robot      # Run both
 ralph verify --base-url http://localhost:3000  # Override base URL
+```
+
+**Controlling UI tests in `ralph run`:**
+
+```bash
+ralph run --with-smoke         # Enable smoke tests (agent-browser)
+ralph run --no-smoke           # Disable smoke tests
+ralph run --with-robot         # Enable Robot Framework tests
+ralph run --no-robot           # Disable Robot Framework tests
 ```
 
 UI tests run after quality gates pass and services are started. Failed tests trigger automatic fix loops when `--fix` is enabled.

@@ -281,10 +281,10 @@ def command_scan(args: argparse.Namespace) -> int:
 def command_run(args: argparse.Namespace) -> int:
     """Execute the verified task loop."""
     from .run import run_tasks, RunOptions, ExitCode
-    
+
     config_path = Path(args.config) if args.config else None
     prd_path = Path(args.prd_json) if args.prd_json else None
-    
+
     options = RunOptions(
         prd_json=args.prd_json,
         task_id=getattr(args, 'task', None),
@@ -295,17 +295,19 @@ def command_run(args: argparse.Namespace) -> int:
         resume=getattr(args, 'resume', False),
         post_verify=getattr(args, 'post_verify', True),
         verbose=getattr(args, 'verbose', False),
+        with_smoke=getattr(args, 'with_smoke', None),
+        with_robot=getattr(args, 'with_robot', None),
     )
-    
+
     result = run_tasks(
         config_path=config_path,
         prd_path=prd_path,
         options=options,
     )
-    
+
     if result.error:
         eprint(f"Error: {result.error}")
-    
+
     return result.exit_code.value
 
 
@@ -341,9 +343,9 @@ def command_verify(args: argparse.Namespace) -> int:
 def command_autopilot(args: argparse.Namespace) -> int:
     """Run the autopilot self-improvement pipeline."""
     from .autopilot import run_autopilot, AutopilotOptions
-    
+
     config_path = Path(args.config) if args.config else None
-    
+
     options = AutopilotOptions(
         reports_dir=getattr(args, 'reports', None),
         report_path=getattr(args, 'report', None),
@@ -358,6 +360,10 @@ def command_autopilot(args: argparse.Namespace) -> int:
         recent_days=getattr(args, 'recent_days', None),
         resume=getattr(args, 'resume', False),
         verbose=getattr(args, 'verbose', False),
+        with_research=getattr(args, 'with_research', None),
+        research_backend=getattr(args, 'research_backend', False),
+        research_frontend=getattr(args, 'research_frontend', False),
+        research_web=getattr(args, 'research_web', False),
     )
     
     # Parse task count range if provided
@@ -899,6 +905,15 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--resume", action="store_true", help="Resume from existing session")
     sp.add_argument("--post-verify", action="store_true", default=True, help="Run post-completion verification")
     sp.add_argument("--no-post-verify", action="store_false", dest="post_verify", help="Skip post-completion verification")
+    # UI test control flags
+    sp.add_argument("--with-smoke", action="store_true", default=None, dest="with_smoke",
+        help="Run smoke tests (agent-browser) for frontend tasks")
+    sp.add_argument("--no-smoke", action="store_false", dest="with_smoke",
+        help="Skip smoke tests even for frontend tasks")
+    sp.add_argument("--with-robot", action="store_true", default=None, dest="with_robot",
+        help="Run Robot Framework tests for frontend tasks")
+    sp.add_argument("--no-robot", action="store_false", dest="with_robot",
+        help="Skip Robot Framework tests")
     sp.set_defaults(func=command_run)
 
     sp = sub.add_parser("verify", help="Run post-completion verification")
@@ -929,6 +944,17 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--recent-days", type=int, default=None, help="Exclude items fixed in last N days")
     sp.add_argument("--resume", action="store_true", help="Resume last incomplete run")
     sp.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    # Research control flags
+    sp.add_argument("--with-research", action="store_true", default=None, dest="with_research",
+        help="Enable research phase for PRD generation (default: on)")
+    sp.add_argument("--no-research", action="store_false", dest="with_research",
+        help="Skip research phase")
+    sp.add_argument("--research-backend", action="store_true", dest="research_backend",
+        help="Enable backend research only")
+    sp.add_argument("--research-frontend", action="store_true", dest="research_frontend",
+        help="Enable frontend research only")
+    sp.add_argument("--research-web", action="store_true", dest="research_web",
+        help="Enable web research only")
     sp.set_defaults(func=command_autopilot)
 
     sp = sub.add_parser("chat", help="Open Claude Code chat and save a markdown doc")

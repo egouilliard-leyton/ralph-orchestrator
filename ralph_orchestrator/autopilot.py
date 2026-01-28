@@ -207,6 +207,11 @@ class AutopilotOptions:
     recent_days: Optional[int] = None
     resume: bool = False
     verbose: bool = False
+    # Research options
+    with_research: Optional[bool] = None  # None = use config, True = enable, False = disable
+    research_backend: bool = False  # Enable backend research only
+    research_frontend: bool = False  # Enable frontend research only
+    research_web: bool = False  # Enable web research only
 
 
 @dataclass
@@ -1136,49 +1141,60 @@ class BranchManager:
 
 class PRDGenerator:
     """Generates PRD documents from analysis output."""
-    
+
     def __init__(
         self,
         config: AutopilotConfig,
         repo_root: Path,
         branch_manager: BranchManager,
+        research_context: Optional[Any] = None,
     ):
         """Initialize PRD generator.
-        
+
         Args:
             config: Autopilot configuration.
             repo_root: Repository root.
             branch_manager: Branch manager for commits.
+            research_context: Optional research context to enhance PRD.
         """
         self.config = config
         self.repo_root = repo_root
         self.branch_manager = branch_manager
-    
+        self.research_context = research_context
+
     def generate(self, analysis: AnalysisOutput) -> Path:
         """Generate PRD from analysis.
-        
+
         Args:
             analysis: Analysis output.
-        
+
         Returns:
             Path to generated PRD.
-        
+
         Raises:
             PRDGenerationError: If generation fails.
         """
         from .agents.claude import invoke_claude
-        
+
         # Determine output path
         feature_name = extract_feature_name(analysis.branch_name)
         prd_filename = f"prd-{feature_name}.md"
         output_dir = self.repo_root / self.config.prd_output_dir
         output_dir.mkdir(parents=True, exist_ok=True)
         prd_path = output_dir / prd_filename
-        
+
         # Format acceptance criteria
         criteria_text = "\n".join(f"- {c}" for c in analysis.acceptance_criteria)
-        
-        # Generate prompt
+
+        # Build research context section
+        research_section = ""
+        if self.research_context:
+            try:
+                research_section = self.research_context.to_prompt_section()
+            except Exception:
+                pass
+
+        # Generate prompt with optional research context
         prompt = PRD_PROMPT_TEMPLATE.format(
             priority_item=analysis.priority_item,
             description=analysis.description,
@@ -1186,6 +1202,10 @@ class PRDGenerator:
             acceptance_criteria=criteria_text,
             output_path=prd_path,
         )
+
+        # Append research context to prompt if available
+        if research_section:
+            prompt = f"{prompt}\n\nRESEARCH CONTEXT:\n{research_section}"
         
         # Call Claude CLI
         result = invoke_claude(
@@ -1868,10 +1888,15 @@ class AutopilotOrchestrator:
         # Phase 3: Branch Setup
         if run.status == RunStatus.BRANCHING:
             run = self._phase_branch(run, analysis)
-        
+
+        # Phase 3.5: Research (optional)
+        research_context = None
+        if run.status == RunStatus.PLANNING and not self.options.skip_prd:
+            research_context = self._phase_research(analysis)
+
         # Phase 4: PRD Generation
         if run.status == RunStatus.PLANNING and not self.options.skip_prd:
-            run = self._phase_prd(run, analysis)
+            run = self._phase_prd(run, analysis, research_context)
         
         # Phase 5: Task Generation
         if run.tasks_path is None:
@@ -2128,30 +2153,99 @@ class AutopilotOrchestrator:
             base_commit=base_commit,
         )
     
-    def _phase_prd(self, run: AutopilotRun, analysis: Optional[AnalysisOutput]) -> AutopilotRun:
+    def _phase_research(self, analysis: Optional[AnalysisOutput]) -> Optional["ResearchContext"]:
+        """Phase 3.5: Run research sub-agents (optional).
+
+        Args:
+            analysis: Analysis output from phase 2.
+
+        Returns:
+            ResearchContext with research findings, or None if disabled.
+        """
+        from .research import ResearchCoordinator, ResearchOptions
+
+        # Determine if research is enabled
+        with_research = self.options.with_research
+        if with_research is False:
+            self._print("\n▶ Research phase skipped (--no-research)")
+            return None
+
+        # Check for specific researcher flags
+        specific_flags = (
+            self.options.research_backend or
+            self.options.research_frontend or
+            self.options.research_web
+        )
+
+        # Build research options
+        options = ResearchOptions.from_config(self.config)
+
+        # Override based on CLI flags
+        if with_research is True or specific_flags:
+            options.enabled = True
+        if specific_flags:
+            # If specific flags are set, only enable those
+            options.backend_enabled = self.options.research_backend
+            options.frontend_enabled = self.options.research_frontend
+            options.web_enabled = self.options.research_web
+
+        if not options.enabled:
+            return None
+
+        self._print("\n▶ Running research phase...")
+
+        coordinator = ResearchCoordinator(
+            repo_root=self.repo_root,
+            options=options,
+            verbose=self.options.verbose,
+        )
+
+        # Get context from analysis
+        analysis_context = None
+        priority_item = None
+        if analysis:
+            analysis_context = f"{analysis.priority_item}: {analysis.description}"
+            priority_item = analysis.priority_item
+
+        research_context = coordinator.research(
+            analysis_context=analysis_context,
+            priority_item=priority_item,
+        )
+
+        self._print("  ✓ Research complete")
+        return research_context
+
+    def _phase_prd(
+        self,
+        run: AutopilotRun,
+        analysis: Optional[AnalysisOutput],
+        research_context: Optional["ResearchContext"] = None,
+    ) -> AutopilotRun:
         """Phase 4: Generate PRD.
-        
+
         Args:
             run: Current run state.
             analysis: Analysis output.
-        
+            research_context: Optional research context to enhance PRD.
+
         Returns:
             Updated run state.
-        
+
         Raises:
             PRDGenerationError: If PRD generation fails.
         """
         self._print("\n▶ Generating PRD...")
-        
+
         if analysis is None:
             analysis = self._load_analysis(run.analysis_path)
-        
+
         generator = PRDGenerator(
             config=self.config.autopilot,
             repo_root=self.repo_root,
             branch_manager=self.branch_manager,
+            research_context=research_context,
         )
-        
+
         prd_path = generator.generate(analysis)
         self._print(f"  ✓ PRD saved to: {prd_path}")
         

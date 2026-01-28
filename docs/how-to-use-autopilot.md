@@ -19,11 +19,29 @@ Autopilot is a self-improvement pipeline that:
 
 1. **Finds** the latest report in your reports directory
 2. **Analyzes** the report to identify the #1 priority item
-3. **Creates** a feature branch for the work
-4. **Generates** a Product Requirements Document (PRD)
-5. **Converts** the PRD into granular tasks
-6. **Executes** the tasks using the verified execution engine
-7. **Creates** a pull request with the changes
+3. **Researches** the codebase and web for context (optional)
+4. **Creates** a feature branch for the work
+5. **Generates** a Product Requirements Document (PRD)
+6. **Converts** the PRD into granular tasks
+7. **Executes** the tasks using the verified execution engine
+8. **Creates** a pull request with the changes
+
+### Research Phase
+
+Between analysis and PRD generation, autopilot can run research sub-agents to gather context:
+
+- **Backend Researcher**: Scans Python files, models, routes, services, and API patterns
+- **Frontend Researcher**: Scans TSX/JSX/Vue files, components, styles, and UI patterns
+- **Web Researcher**: Searches for documentation, best practices, and library usage
+
+Research helps generate more accurate PRDs by understanding your codebase's existing patterns and conventions.
+
+Control research with CLI flags:
+- `--with-research` - Enable all research (default)
+- `--no-research` - Skip research phase entirely
+- `--research-backend` - Run backend research only
+- `--research-frontend` - Run frontend research only
+- `--research-web` - Run web search research only
 
 ## Steps
 
@@ -109,6 +127,25 @@ Or specify a custom reports directory:
 
 ```bash
 ralph autopilot --reports ./custom-reports
+```
+
+**Research Control:**
+
+```bash
+# Run with all research enabled (default)
+ralph autopilot --with-research
+
+# Skip research for faster execution
+ralph autopilot --no-research
+
+# Run only backend research (Python/API analysis)
+ralph autopilot --research-backend
+
+# Run only frontend research (React/Vue/CSS analysis)
+ralph autopilot --research-frontend
+
+# Run only web research (documentation search)
+ralph autopilot --research-web
 ```
 
 ### 5. Review the Results

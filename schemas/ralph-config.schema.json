@@ -45,9 +45,63 @@
     },
     "pr": {
       "$ref": "#/definitions/PRConfig"
+    },
+    "skills": {
+      "$ref": "#/definitions/SkillsConfig"
     }
   },
   "definitions": {
+    "SkillsConfig": {
+      "type": "object",
+      "description": "Specialized skill routing configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable skill routing for implementation agents"
+        },
+        "auto_detect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-detect skills from task content patterns"
+        },
+        "custom_mappings": {
+          "type": "array",
+          "description": "Custom skill mappings to add to defaults",
+          "items": {
+            "type": "object",
+            "required": ["skill_name"],
+            "properties": {
+              "skill_name": {
+                "type": "string",
+                "description": "Name of the Claude skill"
+              },
+              "patterns": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Keywords that trigger this skill"
+              },
+              "file_patterns": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "File glob patterns that trigger this skill"
+              },
+              "priority": {
+                "type": "integer",
+                "default": 5,
+                "description": "Higher priority mappings are checked first"
+              },
+              "description": {
+                "type": "string",
+                "description": "Human-readable description"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "TaskSource": {
       "type": "object",
       "description": "Configuration for task source",
@@ -454,6 +508,73 @@
         },
         "memory": {
           "$ref": "#/definitions/MemoryConfig"
+        },
+        "research": {
+          "$ref": "#/definitions/ResearchConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ResearchConfig": {
+      "type": "object",
+      "description": "Research sub-agents configuration for PRD enhancement",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable research phase before PRD generation"
+        },
+        "backend": {
+          "type": "object",
+          "description": "Backend research configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "patterns": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Glob patterns for backend files to scan",
+              "default": ["**/*.py", "**/models/**", "**/routes/**", "**/services/**"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "frontend": {
+          "type": "object",
+          "description": "Frontend research configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "patterns": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Glob patterns for frontend files to scan",
+              "default": ["**/*.tsx", "**/*.jsx", "**/*.vue", "**/components/**"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "web": {
+          "type": "object",
+          "description": "Web research configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "max_queries": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 5,
+              "description": "Maximum number of web search queries"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

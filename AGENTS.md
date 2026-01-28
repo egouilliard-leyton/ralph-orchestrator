@@ -8,7 +8,18 @@
 
 ### Architecture
 
-<!-- Discovered architectural patterns will be added here -->
+The codebase follows a modular architecture with these key directories:
+
+- **`ralph_orchestrator/`** - Core orchestrator modules (cli, run, autopilot, config, etc.)
+- **`ralph_orchestrator/agents/`** - Agent roles, prompts, and signal validation
+- **`ralph_orchestrator/research/`** - Research sub-agents for PRD enhancement
+  - `coordinator.py` - Orchestrates research phases
+  - `backend.py` - Scans Python/API code patterns
+  - `frontend.py` - Scans React/Vue/CSS components
+  - `web.py` - Web search for docs/best practices
+- **`ralph_orchestrator/skills/`** - Skill routing for specialized Claude plugins
+  - `router.py` - Detects and applies skills for tasks
+  - `defaults.py` - Default skill mappings (frontend-design, docx, xlsx, etc.)
 
 ### Naming Conventions
 

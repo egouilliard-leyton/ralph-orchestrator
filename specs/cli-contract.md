@@ -208,6 +208,10 @@ ralph run [OPTIONS]
 | `--env` | | ENUM | dev | Environment mode: `dev`, `prod` |
 | `--resume` | | FLAG | false | Resume from existing session |
 | `--dry-run` | | FLAG | false | Parse tasks, don't execute |
+| `--with-smoke` | | FLAG | false | Enable smoke tests (agent-browser) for frontend tasks |
+| `--no-smoke` | | FLAG | false | Disable smoke tests even for frontend tasks |
+| `--with-robot` | | FLAG | false | Enable Robot Framework tests for frontend tasks |
+| `--no-robot` | | FLAG | false | Disable Robot Framework tests |
 
 ### 4.4 Behavior
 
@@ -477,6 +481,11 @@ ralph autopilot [OPTIONS]
 | `--task-count` | | RANGE | 8-15 | Target task count (e.g., "8-15") |
 | `--analysis-model` | | STRING | (from config) | Model for analysis phase |
 | `--recent-days` | | INT | 7 | Exclude items fixed in last N days |
+| `--with-research` | | FLAG | true | Enable research phase for PRD generation (default: on) |
+| `--no-research` | | FLAG | false | Skip research phase |
+| `--research-backend` | | FLAG | false | Enable backend research only |
+| `--research-frontend` | | FLAG | false | Enable frontend research only |
+| `--research-web` | | FLAG | false | Enable web search research only |
 
 ### 6.4 Behavior
 
@@ -943,9 +952,9 @@ Issues found:
 
 ```
 ralph init [-t TEMPLATE] [-f]           # Initialize repo
-ralph run [-p PRD] [--cr CR]            # Execute tasks
+ralph run [-p PRD] [--with-smoke] [--with-robot]  # Execute tasks
 ralph verify [--ui] [--robot]           # Verify only
-ralph autopilot [-r REPORTS] [--create-pr]  # Full pipeline
+ralph autopilot [-r REPORTS] [--with-research]    # Full pipeline with research
 ralph scan [--fix] [--json]             # Environment check
 
 Common Options:

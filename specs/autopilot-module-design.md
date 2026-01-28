@@ -37,9 +37,10 @@ This document defines the detailed design for the Ralph autopilot module, which 
 The autopilot module enables Ralph to operate in a fully autonomous self-improvement mode. Given a directory of analysis reports (e.g., daily analytics, error logs, user feedback), autopilot:
 
 1. **Selects** the highest-priority actionable item
-2. **Plans** the implementation (PRD + tasks)
-3. **Executes** using the verified execution engine
-4. **Delivers** via pull request
+2. **Researches** the codebase and web for context (optional)
+3. **Plans** the implementation (PRD + tasks)
+4. **Executes** using the verified execution engine
+5. **Delivers** via pull request
 
 ### 1.2 Design Goals
 
@@ -107,6 +108,17 @@ The autopilot module enables Ralph to operate in a fully autonomous self-improve
 │  └──────────────────────────────────────────────────────────────────┘   │
 │         │                                                               │
 │         │  ──── DRY RUN STOPS HERE ────                                │
+│         │                                                               │
+│         ▼                                                               │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │ PHASE 2.5: RESEARCH (optional, --with-research)                  │   │
+│  │                                                                  │   │
+│  │  • Backend Researcher: Scan Python/API code patterns             │   │
+│  │  • Frontend Researcher: Scan React/Vue/CSS components            │   │
+│  │  • Web Researcher: Search docs and best practices                │   │
+│  │                                                                  │   │
+│  │  Output: research_context added to PRD generation                │   │
+│  └──────────────────────────────────────────────────────────────────┘   │
 │         │                                                               │
 │         ▼                                                               │
 │  ┌──────────────────────────────────────────────────────────────────┐   │
@@ -219,6 +231,18 @@ ralph/autopilot/
     ├── analysis.py      # Analysis prompt template
     ├── prd.py           # PRD generation prompt template
     └── tasks.py         # Tasks generation prompt template
+
+ralph/research/          # Research sub-agents (see research/ module)
+├── __init__.py
+├── coordinator.py       # ResearchCoordinator orchestrates research phases
+├── backend.py           # BackendResearcher scans Python/API code
+├── frontend.py          # FrontendResearcher scans React/Vue/CSS
+└── web.py               # WebResearcher uses web search for docs
+
+ralph/skills/            # Skill routing (see skills/ module)
+├── __init__.py
+├── router.py            # SkillRouter detects skills for tasks
+└── defaults.py          # Default skill mappings
 ```
 
 ### 3.2 Module Dependencies
