@@ -58,6 +58,10 @@ class EventType(str, Enum):
     CHECKSUM_VERIFIED = "checksum_verified"
     CHECKSUM_FAILED = "checksum_failed"
 
+    # General logging events
+    INFO = "info"
+    WARNING = "warning"
+
 
 class TimelineLogger:
     """Logger for timeline events in JSONL format.
@@ -456,7 +460,15 @@ class TimelineLogger:
     def checksum_failed(self, error: str) -> Dict[str, Any]:
         """Log checksum verification failure."""
         return self.log(EventType.CHECKSUM_FAILED, status="failed", error=error)
-    
+
+    def log_info(self, message: str) -> Dict[str, Any]:
+        """Log an informational message."""
+        return self.log(EventType.INFO, details={"message": message})
+
+    def log_warning(self, message: str) -> Dict[str, Any]:
+        """Log a warning message."""
+        return self.log(EventType.WARNING, details={"message": message})
+
     def read_events(self) -> list[Dict[str, Any]]:
         """Read all events from the timeline.
         

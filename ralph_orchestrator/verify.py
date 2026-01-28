@@ -22,7 +22,8 @@ from .config import RalphConfig, load_config
 from .session import Session, create_session, load_session
 from .timeline import TimelineLogger, create_timeline_logger, EventType
 from .gates import GateRunner, create_gate_runner, GatesResult, format_gates_summary
-from .services import ServiceManager, create_service_manager, ServiceResult, format_service_status
+# Import from services.py module (service lifecycle), not services/ package (orchestration)
+from .service_lifecycle import ServiceManager, create_service_manager, ServiceResult, format_service_status
 from .ui import (
     AgentBrowserRunner,
     RobotRunner,
@@ -260,22 +261,28 @@ class VerifyEngine:
         base_url: str,
     ) -> bool:
         """Run fix loop for UI test failures.
-        
+
         Uses plan→implement→retest pattern.
-        
+
         Args:
             failures: List of failed test results.
             framework: Test framework name.
             base_url: Base URL for tests.
-            
+
         Returns:
             True if all failures were fixed.
         """
         if not self.claude or not failures:
             return False
-        
+
+        # Ensure session token is available
+        session_token = self.session.session_token
+        if not session_token:
+            self._print("    ✗ No session token available for fix loop")
+            return False
+
         max_iterations = self.options.fix_iterations
-        
+
         # Log fix loop start
         self.timeline.fix_loop_start(framework, max_iterations)
         
@@ -294,7 +301,7 @@ class VerifyEngine:
             self._print("    ▶ Planning agent analyzing failures...")
             plan_prompt = build_ui_planning_prompt(
                 failure_description=combined_failures,
-                session_token=self.session.session_token,
+                session_token=session_token,
             )
             
             agent_config = self.config.get_agent_config("planning")
@@ -312,7 +319,7 @@ class VerifyEngine:
                 continue
             
             # Validate plan signal
-            plan_validation = validate_ui_plan_signal(plan_result.output, self.session.session_token)
+            plan_validation = validate_ui_plan_signal(plan_result.output, session_token)
             if not plan_validation.valid:
                 self._print("    ✗ Planning agent did not provide valid plan signal")
                 self.timeline.fix_loop_iteration(framework, iteration, "invalid_plan_signal")
@@ -324,7 +331,7 @@ class VerifyEngine:
             self._print("    ▶ Implementation agent applying fixes...")
             impl_prompt = build_ui_implementation_prompt(
                 plan=plan_content,
-                session_token=self.session.session_token,
+                session_token=session_token,
             )
             
             impl_config = self.config.get_agent_config("implementation")
@@ -342,7 +349,7 @@ class VerifyEngine:
                 continue
             
             # Validate fix signal
-            fix_validation = validate_ui_fix_signal(impl_result.output, self.session.session_token)
+            fix_validation = validate_ui_fix_signal(impl_result.output, session_token)
             if not fix_validation.valid:
                 self._print("    ✗ Implementation agent did not provide valid fix signal")
                 self.timeline.fix_loop_iteration(framework, iteration, "invalid_fix_signal")

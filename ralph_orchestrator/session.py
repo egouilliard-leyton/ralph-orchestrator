@@ -307,6 +307,16 @@ class Session:
         return self.artifacts_dir / "screenshots"
     
     @property
+    def reports_dir(self) -> Path:
+        """Path to reports directory."""
+        return self.session_dir / "reports"
+    
+    @property
+    def execution_log_path(self) -> Path:
+        """Path to execution.log (human-readable debug log)."""
+        return self.logs_dir / "execution.log"
+    
+    @property
     def session_token(self) -> Optional[str]:
         """Get the session token (for signal validation)."""
         if self.metadata:
@@ -346,6 +356,7 @@ class Session:
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.pids_dir.mkdir(parents=True, exist_ok=True)
         self.screenshots_dir.mkdir(parents=True, exist_ok=True)
+        self.reports_dir.mkdir(parents=True, exist_ok=True)
         
         # Generate session ID and token
         session_id = generate_session_id()
@@ -355,6 +366,8 @@ class Session:
         git_info = get_git_info()
         
         # Create session metadata
+        # Make a copy of pending_tasks to avoid aliasing issues where modifications
+        # to metadata.pending_tasks could affect the caller's list during iteration
         self.metadata = SessionMetadata(
             session_id=session_id,
             session_token=session_token,
@@ -364,7 +377,7 @@ class Session:
             config_path=config_path,
             git_branch=git_info.get("branch"),
             git_commit=git_info.get("commit"),
-            pending_tasks=pending_tasks or [],
+            pending_tasks=list(pending_tasks) if pending_tasks else [],
         )
         
         # Create initial task status
@@ -574,6 +587,18 @@ class Session:
         self.task_status.tasks[task_id].agent_outputs[role] = log_path
         self._save_task_status()
     
+    def save(self) -> None:
+        """Save session state to disk.
+
+        This saves both the session metadata and task status files.
+        Use this after making changes that should persist.
+        """
+        if self.metadata is None or self.task_status is None:
+            raise RuntimeError("Session not initialized")
+
+        self._save_session_metadata()
+        self._save_task_status()
+
     def end_session(
         self,
         status: str = "completed",
@@ -612,6 +637,25 @@ class Session:
         else:
             filename = f"{name}.log"
         return self.logs_dir / filename
+    
+    def get_report_path(self, role: str, task_id: str) -> Path:
+        """Get canonical path for an agent's report file.
+        
+        Returns a stable path that should be used for append-only report writing.
+        Creates the parent directory if it doesn't exist.
+        
+        Args:
+            role: Agent role (e.g., "test_writing", "implementation", "review").
+            task_id: Task ID (e.g., "T-001").
+            
+        Returns:
+            Path like .ralph-session/reports/T-001/test-writing.md
+        """
+        # Normalize role name to kebab-case for filenames
+        role_kebab = role.replace("_", "-")
+        report_dir = self.reports_dir / task_id
+        report_dir.mkdir(parents=True, exist_ok=True)
+        return report_dir / f"{role_kebab}.md"
     
     def exists(self) -> bool:
         """Check if session exists."""

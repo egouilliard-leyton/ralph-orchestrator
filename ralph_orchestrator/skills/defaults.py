@@ -1,0 +1,101 @@
+"""Default skill mappings for Ralph orchestrator."""
+
+from .models import SkillMapping
+
+# Default skill mappings ordered by priority
+DEFAULT_SKILL_MAPPINGS = [
+    SkillMapping(
+        skill_name="frontend-design",
+        patterns=[
+            "frontend",
+            "ui",
+            "component",
+            "react",
+            "vue",
+            "css",
+            "layout",
+            "design",
+            "styling",
+            "button",
+            "form",
+            "modal",
+            "page",
+            "view",
+            "dashboard",
+            "responsive",
+            "tailwind",
+        ],
+        file_patterns=["*.tsx", "*.jsx", "*.vue", "*.css", "*.scss", "*.less"],
+        priority=10,
+        description="UI/UX and frontend implementation tasks",
+    ),
+    SkillMapping(
+        skill_name="docx",
+        patterns=[
+            "document",
+            "word",
+            "specification",
+            "manual",
+            "documentation",
+            "docx",
+            "write document",
+        ],
+        file_patterns=["*.docx", "*.doc"],
+        priority=5,
+        description="Word document creation and editing",
+    ),
+    SkillMapping(
+        skill_name="xlsx",
+        patterns=[
+            "spreadsheet",
+            "excel",
+            "data analysis",
+            "xlsx",
+            "csv",
+            "table",
+            "chart",
+            "calculation",
+        ],
+        file_patterns=["*.xlsx", "*.xls", "*.csv"],
+        priority=5,
+        description="Spreadsheet and data analysis tasks",
+    ),
+    SkillMapping(
+        skill_name="pptx",
+        patterns=[
+            "presentation",
+            "powerpoint",
+            "slides",
+            "pptx",
+            "deck",
+        ],
+        file_patterns=["*.pptx", "*.ppt"],
+        priority=5,
+        description="Presentation creation and editing",
+    ),
+    SkillMapping(
+        skill_name="pdf",
+        patterns=[
+            "pdf",
+            "report",
+            "generate pdf",
+            "pdf form",
+        ],
+        file_patterns=["*.pdf"],
+        priority=5,
+        description="PDF generation and manipulation",
+    ),
+    SkillMapping(
+        skill_name="mcp-builder",
+        patterns=[
+            "mcp",
+            "model context protocol",
+            "mcp server",
+            "integration server",
+            "external api integration",
+        ],
+        file_patterns=[],
+        priority=5,
+        description="MCP server creation for external integrations",
+    ),
+]

@@ -89,6 +89,44 @@ class FilePathGuardrail:
             normalized.append(pattern)
         return normalized
     
+    def _is_markdown_in_test_dir(self, file_path: str) -> bool:
+        """Check if a file is a markdown file inside a test directory.
+        
+        Markdown documentation files (.md) should not be created in test
+        directories during test-writing. They should go to the designated
+        report file under .ralph-session/reports/.
+        
+        Args:
+            file_path: Relative path to check.
+            
+        Returns:
+            True if this is a .md file inside a test directory.
+        """
+        # Normalize path
+        file_path = file_path.lstrip("./")
+        
+        # Check if it's a markdown file
+        if not file_path.lower().endswith(".md"):
+            return False
+        
+        # Check if it's under any test directory pattern
+        for pattern in self._patterns:
+            # Extract the base directory from the pattern
+            # e.g., "tests/**" -> "tests", "test/**/*.py" -> "test"
+            if "**" in pattern:
+                base_dir = pattern.partition("**")[0].rstrip("/")
+            elif "/" in pattern:
+                base_dir = pattern.split("/")[0]
+            else:
+                # Pattern like "*.py" - not a directory pattern
+                continue
+            
+            # Check if the markdown file is under this test directory
+            if base_dir and file_path.startswith(base_dir + "/"):
+                return True
+        
+        return False
+    
     def is_allowed(self, file_path: str) -> bool:
         """Check if a file path is allowed for test-writing agent.
         
@@ -131,6 +169,28 @@ class FilePathGuardrail:
                     return True
         
         return False
+
+    def _is_internal_artifact(self, file_path: str) -> bool:
+        """Check if a path is an internal Ralph artifact we should ignore.
+
+        The guardrail is meant to restrict what the *test-writing agent* can
+        change in the repo. The orchestrator itself creates run artifacts under
+        `.ralph-session/` (logs, timeline, etc.) and `.ralph/` (outputs). Those
+        should never be treated as agent violations.
+        """
+        # Normalize path - only strip leading "./" but keep the dot for hidden dirs
+        p = file_path
+        if p.startswith("./"):
+            p = p[2:]
+        
+        return (
+            p.startswith(".ralph-session/")
+            or p.startswith(".ralph-session")  # Also match exact dir name
+            or p.startswith(".ralph/")
+            or p.startswith(".ralph")  # Also match exact dir name
+            or p.startswith(".git/")
+            or p.startswith(".git")  # Also match exact dir name
+        )
     
     def get_file_changes(self) -> Tuple[List[FileChange], List[FileChange]]:
         """Get current file changes from git.
@@ -240,7 +300,13 @@ class FilePathGuardrail:
         violations = []
         
         for change in new_changes:
-            if self.is_allowed(change.path):
+            if self._is_internal_artifact(change.path):
+                allowed_changes.append(change)
+            elif self._is_markdown_in_test_dir(change.path):
+                # Markdown files in test directories are never allowed
+                # They should go to .ralph-session/reports/ instead
+                violations.append(change)
+            elif self.is_allowed(change.path):
                 allowed_changes.append(change)
             else:
                 violations.append(change)

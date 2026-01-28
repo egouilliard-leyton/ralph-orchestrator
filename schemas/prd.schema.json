@@ -123,6 +123,21 @@
           "default": "",
           "maxLength": 5000
         },
+        "requiresTests": {
+          "type": "boolean",
+          "description": "Whether this task requires automated tests. Set to false for analysis, documentation, or configuration tasks.",
+          "default": true
+        },
+        "affectsFrontend": {
+          "type": "boolean",
+          "description": "Whether this task modifies frontend code. Triggers UI testing when true and frontend service is configured.",
+          "default": false
+        },
+        "skill": {
+          "type": ["string", "null"],
+          "description": "Explicit Claude skill to use for this task (overrides auto-detection). Use null or omit for auto-detection.",
+          "enum": ["frontend-design", "docx", "xlsx", "pptx", "pdf", "mcp-builder", null]
+        },
         "subtasks": {
           "type": "array",
           "description": "Optional subtask breakdown for complex tasks",

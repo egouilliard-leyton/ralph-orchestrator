@@ -25,6 +25,7 @@ class SignalType(str, Enum):
     FIX_DONE = "fix-done"
     UI_PLAN = "ui-plan"
     UI_FIX_DONE = "ui-fix-done"
+    UI_TESTS_DONE = "ui-tests-done"
     ROBOT_PLAN = "robot-plan"
     ROBOT_FIX_DONE = "robot-fix-done"
 
@@ -37,6 +38,7 @@ REVIEW_REJECTION_SIGNALS = {SignalType.REVIEW_REJECTED}
 FIX_SIGNALS = {SignalType.FIX_DONE}
 PLANNING_SIGNALS = {SignalType.UI_PLAN, SignalType.ROBOT_PLAN}
 UI_FIX_SIGNALS = {SignalType.UI_FIX_DONE}
+UI_TESTING_SIGNALS = {SignalType.UI_TESTS_DONE}
 ROBOT_FIX_SIGNALS = {SignalType.ROBOT_FIX_DONE}
 
 
@@ -266,6 +268,17 @@ Issues found:
         SignalType.FIX_DONE: f'''<fix-done session="{token}">
 Fixed the identified issues.
 </fix-done>''',
+        
+        SignalType.UI_TESTS_DONE: f'''<ui-tests-done session="{token}">
+## Verification Results
+- [criterion 1]: PASS/FAIL - [observation]
+
+## Tests Generated
+- [list of test files]
+
+## Issues Found
+- [any issues]
+</ui-tests-done>''',
     }
     
     return examples.get(signal_type, f'<{signal_type.value} session="{token}">...</{signal_type.value}>')
@@ -289,6 +302,7 @@ def get_feedback_for_missing_signal(
         "test_writing": (SignalType.TESTS_DONE, "test-writing"),
         "review": (SignalType.REVIEW_APPROVED, "review"),
         "fix": (SignalType.FIX_DONE, "fix"),
+        "ui_testing": (SignalType.UI_TESTS_DONE, "ui-testing"),
     }
     
     signal_type, role_name = role_signals.get(role, (SignalType.TASK_DONE, role))
@@ -382,12 +396,92 @@ def validate_robot_fix_signal(
     expected_token: str,
 ) -> SignalValidationResult:
     """Validate Robot fix agent completion signal.
-    
+
     Args:
         response: Full text response from Claude CLI.
         expected_token: Expected session token.
-        
+
     Returns:
         SignalValidationResult with validation outcome.
     """
     return validate_signal(response, expected_token, ROBOT_FIX_SIGNALS)
+
+
+def validate_ui_testing_signal(
+    response: str,
+    expected_token: str,
+) -> SignalValidationResult:
+    """Validate UI testing agent completion signal.
+
+    Args:
+        response: Full text response from Claude CLI.
+        expected_token: Expected session token.
+
+    Returns:
+        SignalValidationResult with validation outcome.
+    """
+    return validate_signal(response, expected_token, UI_TESTING_SIGNALS)
+
+
+# =============================================================================
+# Convenience Signal Parsing Functions
+# =============================================================================
+
+def parse_task_done_signal(response: str) -> Optional[Signal]:
+    """Parse task-done signal from response.
+
+    Args:
+        response: Full text response from Claude CLI.
+
+    Returns:
+        Signal object if found, None otherwise.
+    """
+    return find_signal(response, IMPLEMENTATION_SIGNALS)
+
+
+def parse_tests_done_signal(response: str) -> Optional[Signal]:
+    """Parse tests-done signal from response.
+
+    Args:
+        response: Full text response from Claude CLI.
+
+    Returns:
+        Signal object if found, None otherwise.
+    """
+    return find_signal(response, TEST_WRITING_SIGNALS)
+
+
+def parse_review_approved_signal(response: str) -> Optional[Signal]:
+    """Parse review-approved signal from response.
+
+    Args:
+        response: Full text response from Claude CLI.
+
+    Returns:
+        Signal object if found, None otherwise.
+    """
+    return find_signal(response, REVIEW_APPROVAL_SIGNALS)
+
+
+def parse_review_rejected_signal(response: str) -> Optional[Signal]:
+    """Parse review-rejected signal from response.
+
+    Args:
+        response: Full text response from Claude CLI.
+
+    Returns:
+        Signal object if found, None otherwise.
+    """
+    return find_signal(response, REVIEW_REJECTION_SIGNALS)
+
+
+def parse_fix_done_signal(response: str) -> Optional[Signal]:
+    """Parse fix-done signal from response.
+
+    Args:
+        response: Full text response from Claude CLI.
+
+    Returns:
+        Signal object if found, None otherwise.
+    """
+    return find_signal(response, FIX_SIGNALS)

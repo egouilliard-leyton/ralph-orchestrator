@@ -91,12 +91,22 @@ ralph/
 │   ├── timeline.py     # JSONL event logging
 │   ├── summary.py      # Run summary generation
 │   └── artifacts.py    # Artifact management (screenshots, etc.)
-└── autopilot/          # Autopilot mode (Compound-style)
+├── autopilot/          # Autopilot mode (Compound-style)
+│   ├── __init__.py
+│   ├── analysis.py     # Report analysis
+│   ├── prd_gen.py      # PRD generation
+│   ├── tasks_gen.py    # Task list generation
+│   └── pr.py           # PR creation
+├── research/           # Research sub-agents for PRD enhancement
+│   ├── __init__.py
+│   ├── coordinator.py  # ResearchCoordinator orchestrates research
+│   ├── backend.py      # BackendResearcher scans Python/API code
+│   ├── frontend.py     # FrontendResearcher scans React/Vue/CSS
+│   └── web.py          # WebResearcher uses web search
+└── skills/             # Skill routing for specialized plugins
     ├── __init__.py
-    ├── analysis.py     # Report analysis
-    ├── prd_gen.py      # PRD generation
-    ├── tasks_gen.py    # Task list generation
-    └── pr.py           # PR creation
+    ├── router.py       # SkillRouter detects skills for tasks
+    └── defaults.py     # Default skill mappings
 ```
 
 ---
@@ -1464,7 +1474,7 @@ if __name__ == "__main__":
 #### 3.11.2 Pipeline Overview
 
 ```
-Report Discovery → Analysis → Branch → PRD → Tasks → Verified Execution → PR
+Report Discovery → Analysis → Research (optional) → Branch → PRD → Tasks → Verified Execution → PR
 ```
 
 1. **Report Discovery**: Find latest report in configured directory

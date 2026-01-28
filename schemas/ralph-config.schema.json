@@ -45,9 +45,63 @@
     },
     "pr": {
       "$ref": "#/definitions/PRConfig"
+    },
+    "skills": {
+      "$ref": "#/definitions/SkillsConfig"
     }
   },
   "definitions": {
+    "SkillsConfig": {
+      "type": "object",
+      "description": "Specialized skill routing configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable skill routing for implementation agents"
+        },
+        "auto_detect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-detect skills from task content patterns"
+        },
+        "custom_mappings": {
+          "type": "array",
+          "description": "Custom skill mappings to add to defaults",
+          "items": {
+            "type": "object",
+            "required": ["skill_name"],
+            "properties": {
+              "skill_name": {
+                "type": "string",
+                "description": "Name of the Claude skill"
+              },
+              "patterns": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Keywords that trigger this skill"
+              },
+              "file_patterns": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "File glob patterns that trigger this skill"
+              },
+              "priority": {
+                "type": "integer",
+                "default": 5,
+                "description": "Higher priority mappings are checked first"
+              },
+              "description": {
+                "type": "string",
+                "description": "Human-readable description"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "TaskSource": {
       "type": "object",
       "description": "Configuration for task source",
@@ -239,8 +293,48 @@
         "agent_browser": {
           "$ref": "#/definitions/AgentBrowserConfig"
         },
+        "browser_use": {
+          "$ref": "#/definitions/BrowserUseConfig"
+        },
         "robot": {
           "$ref": "#/definitions/RobotConfig"
+        },
+        "frontend_paths": {
+          "type": "array",
+          "description": "Glob patterns for frontend file paths (for UI testing detection)",
+          "items": {
+            "type": "string"
+          },
+          "default": ["frontend/**", "src/components/**", "src/pages/**", "*.tsx", "*.jsx"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "BrowserUseConfig": {
+      "type": "object",
+      "description": "Browser-use UI testing configuration for agent-browser CLI",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether browser-use UI testing is enabled"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "Base URL for the frontend service (e.g., http://localhost:3000)",
+          "format": "uri"
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 600,
+          "default": 120,
+          "description": "Timeout in seconds for browser operations"
+        },
+        "screenshot_on_failure": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to capture screenshots when tests fail"
         }
       },
       "additionalProperties": false
@@ -293,6 +387,11 @@
           "type": "object",
           "description": "Variables to pass to Robot",
           "additionalProperties": { "type": "string" }
+        },
+        "auto_generate": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow UI testing agent to create and update Robot Framework tests"
         }
       },
       "additionalProperties": false
@@ -305,7 +404,8 @@
         "test_writing": { "$ref": "#/definitions/AgentRole" },
         "review": { "$ref": "#/definitions/AgentRole" },
         "fix": { "$ref": "#/definitions/AgentRole" },
-        "planning": { "$ref": "#/definitions/AgentRole" }
+        "planning": { "$ref": "#/definitions/AgentRole" },
+        "ui_testing": { "$ref": "#/definitions/AgentRole" }
       },
       "additionalProperties": false
     },
@@ -408,6 +508,73 @@
         },
         "memory": {
           "$ref": "#/definitions/MemoryConfig"
+        },
+        "research": {
+          "$ref": "#/definitions/ResearchConfig"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ResearchConfig": {
+      "type": "object",
+      "description": "Research sub-agents configuration for PRD enhancement",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable research phase before PRD generation"
+        },
+        "backend": {
+          "type": "object",
+          "description": "Backend research configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "patterns": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Glob patterns for backend files to scan",
+              "default": ["**/*.py", "**/models/**", "**/routes/**", "**/services/**"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "frontend": {
+          "type": "object",
+          "description": "Frontend research configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "patterns": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Glob patterns for frontend files to scan",
+              "default": ["**/*.tsx", "**/*.jsx", "**/*.vue", "**/components/**"]
+            }
+          },
+          "additionalProperties": false
+        },
+        "web": {
+          "type": "object",
+          "description": "Web research configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "max_queries": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 5,
+              "description": "Maximum number of web search queries"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

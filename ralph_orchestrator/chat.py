@@ -171,6 +171,7 @@ def run_chat(repo_root: Path, options: ChatOptions) -> Path:
 
     system_prompt = _build_system_prompt(template, mode, out_path)
     cmd = _claude_interactive_cmd_base() + [
+        "--dangerously-skip-permissions",
         "--append-system-prompt",
         system_prompt,
         "--model",

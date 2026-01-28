@@ -1,3 +1,13 @@
+"""Ralph Orchestrator CLI.
+
+This module defines the `ralph` command-line interface, including:
+- Argument parsing and command dispatch
+- Helpers used by CLI flows (e.g., task generation from markdown)
+
+The core execution loop lives in `run.py`; the CLI should stay a thin wrapper
+around reusable orchestration logic.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -271,10 +281,10 @@ def command_scan(args: argparse.Namespace) -> int:
 def command_run(args: argparse.Namespace) -> int:
     """Execute the verified task loop."""
     from .run import run_tasks, RunOptions, ExitCode
-    
+
     config_path = Path(args.config) if args.config else None
     prd_path = Path(args.prd_json) if args.prd_json else None
-    
+
     options = RunOptions(
         prd_json=args.prd_json,
         task_id=getattr(args, 'task', None),
@@ -285,17 +295,19 @@ def command_run(args: argparse.Namespace) -> int:
         resume=getattr(args, 'resume', False),
         post_verify=getattr(args, 'post_verify', True),
         verbose=getattr(args, 'verbose', False),
+        with_smoke=getattr(args, 'with_smoke', None),
+        with_robot=getattr(args, 'with_robot', None),
     )
-    
+
     result = run_tasks(
         config_path=config_path,
         prd_path=prd_path,
         options=options,
     )
-    
+
     if result.error:
         eprint(f"Error: {result.error}")
-    
+
     return result.exit_code.value
 
 
@@ -331,9 +343,9 @@ def command_verify(args: argparse.Namespace) -> int:
 def command_autopilot(args: argparse.Namespace) -> int:
     """Run the autopilot self-improvement pipeline."""
     from .autopilot import run_autopilot, AutopilotOptions
-    
+
     config_path = Path(args.config) if args.config else None
-    
+
     options = AutopilotOptions(
         reports_dir=getattr(args, 'reports', None),
         report_path=getattr(args, 'report', None),
@@ -348,6 +360,10 @@ def command_autopilot(args: argparse.Namespace) -> int:
         recent_days=getattr(args, 'recent_days', None),
         resume=getattr(args, 'resume', False),
         verbose=getattr(args, 'verbose', False),
+        with_research=getattr(args, 'with_research', None),
+        research_backend=getattr(args, 'research_backend', False),
+        research_frontend=getattr(args, 'research_frontend', False),
+        research_web=getattr(args, 'research_web', False),
     )
     
     # Parse task count range if provided
@@ -411,6 +427,7 @@ def _invoke_claude_structured(prompt: str, schema: Dict[str, Any], model: str = 
     cmd = [
         argv0,
         "--print",
+        "--dangerously-skip-permissions",
         "--output-format",
         "json",
         "--json-schema",
@@ -591,6 +608,8 @@ def generate_tasks_from_markdown(
     md = src.read_text(encoding="utf-8", errors="replace")
     
     # Determine task count range
+    min_count: int
+    max_count: int
     if task_count == "auto" or task_count is None:
         # Use AI to analyze complexity and determine task count
         complexity = analyze_complexity_for_task_count(md, model=model, verbose=verbose)
@@ -600,11 +619,9 @@ def generate_tasks_from_markdown(
             print(f"  Complexity: {complexity.complexity} → {min_count}-{max_count} tasks")
             print(f"  Rationale: {complexity.rationale[:100]}...")
     else:
-        min_count, max_count = _parse_task_count(task_count)
-        if min_count is None:
-            min_count = 8
-        if max_count is None:
-            max_count = 15
+        parsed_min, parsed_max = _parse_task_count(task_count)
+        min_count = parsed_min if parsed_min is not None else 8
+        max_count = parsed_max if parsed_max is not None else 15
     
     # Use a relaxed schema for generation (easier for the model),
     # then validate against the canonical prd.schema.json after.
@@ -688,6 +705,89 @@ def command_validate_tasks(args: argparse.Namespace) -> int:
         eprint(str(e))
         return 1
     print(f"✓ Valid: {path}")
+    return 0
+
+
+def command_serve(args: argparse.Namespace) -> int:
+    """Start the Ralph web UI server."""
+    import webbrowser
+
+    try:
+        import uvicorn
+    except ImportError:
+        eprint("Error: uvicorn is not installed. Install with: pip install uvicorn")
+        return 1
+
+    # Determine host - remote flag overrides host
+    host = args.host
+    if args.remote:
+        host = "0.0.0.0"
+        print("WARNING: Remote access enabled. The server will be accessible from your network.")
+        print("         Ensure you understand the security implications.")
+        print()
+
+    port = args.port
+
+    # Determine projects root
+    projects_root = Path(args.projects_root).resolve() if args.projects_root else Path.cwd()
+    if not projects_root.exists():
+        eprint(f"Projects root directory does not exist: {projects_root}")
+        return 2
+
+    # Add the project root to sys.path so the server module can be imported
+    # This is needed because server/ is not part of the ralph_orchestrator package
+    server_parent = PROJECT_ROOT
+    if str(server_parent) not in sys.path:
+        sys.path.insert(0, str(server_parent))
+
+    # Initialize the ProjectService with the specified projects root
+    # We need to set this before importing the app so it uses our paths
+    from ralph_orchestrator.services.project_service import ProjectService
+    from server import api
+
+    # Configure the project service with our search paths
+    api._project_service = ProjectService(search_paths=[projects_root])
+
+    # Build the URL
+    display_host = "localhost" if host in ("127.0.0.1", "0.0.0.0") else host
+    url = f"http://{display_host}:{port}"
+
+    # Print startup message
+    print("Ralph Orchestrator Web UI")
+    print("=" * 40)
+    print(f"  Server:       {url}")
+    print(f"  API docs:     {url}/docs")
+    print(f"  Projects root: {projects_root}")
+    print()
+    print("Press Ctrl+C to stop the server")
+    print()
+    sys.stdout.flush()
+
+    # Auto-open browser if requested
+    if args.open:
+        # Use a small delay to let the server start
+        import threading
+        def open_browser():
+            import time
+            time.sleep(1.0)  # Wait for server to start
+            webbrowser.open(url)
+        threading.Thread(target=open_browser, daemon=True).start()
+
+    # Start the uvicorn server
+    try:
+        uvicorn.run(
+            "server.api:app",
+            host=host,
+            port=port,
+            log_level="info",
+            reload=False,
+        )
+    except KeyboardInterrupt:
+        print("\nServer stopped.")
+    except Exception as e:
+        eprint(f"Server error: {e}")
+        return 1
+
     return 0
 
 
@@ -799,12 +899,21 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("-p", "--prd-json", default=None, help="Path to prd.json task file")
     sp.add_argument("-t", "--task", default=None, help="Run only specific task ID")
     sp.add_argument("--from-task", default=None, help="Start from specific task ID")
-    sp.add_argument("--max-iterations", type=int, default=30, help="Maximum task loop iterations")
+    sp.add_argument("--max-iterations", type=int, default=200, help="Maximum task loop iterations")
     sp.add_argument("--gates", default="full", choices=["build", "full", "none"], help="Gate level to run")
     sp.add_argument("--dry-run", action="store_true", help="Parse tasks, don't execute")
     sp.add_argument("--resume", action="store_true", help="Resume from existing session")
     sp.add_argument("--post-verify", action="store_true", default=True, help="Run post-completion verification")
     sp.add_argument("--no-post-verify", action="store_false", dest="post_verify", help="Skip post-completion verification")
+    # UI test control flags
+    sp.add_argument("--with-smoke", action="store_true", default=None, dest="with_smoke",
+        help="Run smoke tests (agent-browser) for frontend tasks")
+    sp.add_argument("--no-smoke", action="store_false", dest="with_smoke",
+        help="Skip smoke tests even for frontend tasks")
+    sp.add_argument("--with-robot", action="store_true", default=None, dest="with_robot",
+        help="Run Robot Framework tests for frontend tasks")
+    sp.add_argument("--no-robot", action="store_false", dest="with_robot",
+        help="Skip Robot Framework tests")
     sp.set_defaults(func=command_run)
 
     sp = sub.add_parser("verify", help="Run post-completion verification")
@@ -835,6 +944,17 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--recent-days", type=int, default=None, help="Exclude items fixed in last N days")
     sp.add_argument("--resume", action="store_true", help="Resume last incomplete run")
     sp.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    # Research control flags
+    sp.add_argument("--with-research", action="store_true", default=None, dest="with_research",
+        help="Enable research phase for PRD generation (default: on)")
+    sp.add_argument("--no-research", action="store_false", dest="with_research",
+        help="Skip research phase")
+    sp.add_argument("--research-backend", action="store_true", dest="research_backend",
+        help="Enable backend research only")
+    sp.add_argument("--research-frontend", action="store_true", dest="research_frontend",
+        help="Enable frontend research only")
+    sp.add_argument("--research-web", action="store_true", dest="research_web",
+        help="Enable web research only")
     sp.set_defaults(func=command_autopilot)
 
     sp = sub.add_parser("chat", help="Open Claude Code chat and save a markdown doc")
@@ -885,6 +1005,36 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("validate-tasks", help="Validate prd.json against schema")
     sp.add_argument("--path", default=None, help="Path to prd.json (default: .ralph/prd.json)")
     sp.set_defaults(func=command_validate_tasks)
+
+    # Serve command - starts the FastAPI web server
+    sp = sub.add_parser("serve", help="Start the Ralph web UI server")
+    sp.add_argument(
+        "--port",
+        type=int,
+        default=3000,
+        help="Port to run the server on (default: 3000)",
+    )
+    sp.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host address to bind to (default: 127.0.0.1)",
+    )
+    sp.add_argument(
+        "--projects-root",
+        default=None,
+        help="Root directory to scan for projects (default: current directory)",
+    )
+    sp.add_argument(
+        "--open",
+        action="store_true",
+        help="Auto-open browser to the web UI",
+    )
+    sp.add_argument(
+        "--remote",
+        action="store_true",
+        help="Allow remote connections (binds to 0.0.0.0). WARNING: This exposes the server to your network.",
+    )
+    sp.set_defaults(func=command_serve)
 
     # Flow command with subcommands
     sp_flow = sub.add_parser("flow", help="One-command flows (chat→tasks→validate→run)")

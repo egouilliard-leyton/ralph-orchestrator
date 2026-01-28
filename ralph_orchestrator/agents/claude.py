@@ -15,10 +15,13 @@ import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from ..exec import run_command, ExecResult
 from ..timeline import TimelineLogger, EventType
+
+if TYPE_CHECKING:
+    from ..config import RalphConfig
 
 
 # Default Claude CLI command
@@ -38,6 +41,7 @@ class ClaudeResult:
     error: Optional[str] = None
     timed_out: bool = False
     log_path: Optional[Path] = None
+    command: Optional[List[str]] = None
     
     @property
     def truncated_output(self) -> str:
@@ -101,6 +105,9 @@ class ClaudeRunner:
         # Add print mode flag (non-interactive)
         args.append("--print")
         
+        # Enable full autonomy - skip permission prompts for all agents
+        args.append("--dangerously-skip-permissions")
+        
         # Add model if specified
         if model:
             args.extend(["--model", model])
@@ -153,6 +160,16 @@ class ClaudeRunner:
             max_turns=max_turns,
         )
         
+        # Log the command being run (for debugging)
+        # Show args up to the -p flag (exclude the actual prompt which is long)
+        cmd_parts = []
+        for part in args:
+            if part == "-p":
+                break
+            cmd_parts.append(part)
+        cmd_preview = " ".join(cmd_parts)
+        print(f"  [CMD] {cmd_preview}")
+        
         # Prepare log path
         log_path = None
         if self.logs_dir:
@@ -188,6 +205,7 @@ class ClaudeRunner:
             error=exec_result.error,
             timed_out=exec_result.timed_out,
             log_path=log_path,
+            command=args,
         )
         
         # Log agent completion
@@ -258,7 +276,7 @@ def invoke_claude(
 
 
 def create_claude_runner(
-    config: "RalphConfig",
+    config: "RalphConfig",  # Type hint using string to avoid circular import
     logs_dir: Optional[Path] = None,
     timeline: Optional[TimelineLogger] = None,
     repo_root: Optional[Path] = None,

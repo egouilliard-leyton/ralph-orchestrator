@@ -26,6 +26,19 @@ ralph run --dry-run                 # Preview tasks without executing
 ralph run --prd-json .ralph/prd.json  # Execute verified task loop
 ralph verify                        # Run post-completion verification
 ralph autopilot --dry-run           # Analyze reports and plan (no execution)
+
+# Run with UI test control
+ralph run --with-smoke --prd-json .ralph/prd.json   # Enable smoke tests
+ralph run --no-smoke --prd-json .ralph/prd.json     # Disable smoke tests
+ralph run --with-robot --prd-json .ralph/prd.json   # Enable Robot Framework
+ralph run --no-robot --prd-json .ralph/prd.json     # Disable Robot Framework
+
+# Autopilot with research control
+ralph autopilot --with-research --dry-run    # Enable research phase (default)
+ralph autopilot --no-research                # Skip research phase
+ralph autopilot --research-backend           # Backend research only
+ralph autopilot --research-frontend          # Frontend research only
+ralph autopilot --research-web               # Web search research only
 ```
 
 ## Architecture
@@ -45,7 +58,7 @@ Each agent must include the session token in their completion signal for anti-ga
 
 - **`cli.py`** - Entry point, argument parsing, subcommand dispatch
 - **`run.py`** - `RunEngine` class orchestrates the verified task loop
-- **`autopilot.py`** - `AutopilotOrchestrator` runs the full report→PRD→tasks→execute pipeline
+- **`autopilot.py`** - `AutopilotOrchestrator` runs the full report→research→PRD→tasks→execute pipeline
 - **`config.py`** - Loads and validates `ralph.yml` against JSON schema
 - **`session.py`** - Session management with checksum-based tamper detection (`.ralph-session/`)
 - **`signals.py`** - Parses XML completion signals from Claude responses
@@ -54,6 +67,14 @@ Each agent must include the session token in their completion signal for anti-ga
 - **`agents/claude.py`** - `ClaudeRunner` wraps Claude CLI invocation
 - **`agents/prompts.py`** - Prompt templates for each agent role
 - **`tasks/prd.py`** - PRD data model and task management
+- **`research/`** - Research sub-agents for PRD enhancement
+  - `coordinator.py` - `ResearchCoordinator` orchestrates research phases
+  - `backend.py` - `BackendResearcher` scans Python/API code patterns
+  - `frontend.py` - `FrontendResearcher` scans React/Vue/CSS components
+  - `web.py` - `WebResearcher` uses web search for docs/best practices
+- **`skills/`** - Skill routing for specialized Claude plugins
+  - `router.py` - `SkillRouter` detects and applies skills for tasks
+  - `defaults.py` - Default skill mappings (frontend-design, docx, xlsx, etc.)
 
 ### Configuration
 

@@ -17,7 +17,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import IO, List, Optional, Tuple, Union, cast
 
 
 # Default timeout for commands (30 minutes)
@@ -335,13 +335,15 @@ def run_command_with_streaming(
             events = sel.select(timeout=min(remaining, 0.1))
             
             for key, _ in events:
-                line = key.fileobj.readline()
+                # Cast to IO type for proper type checking
+                fileobj = cast(IO[str], key.fileobj)
+                line = fileobj.readline()
                 if not line:
-                    sel.unregister(key.fileobj)
+                    sel.unregister(fileobj)
                     continue
-                
+
                 # Determine if stdout or stderr
-                is_stderr = key.fileobj == process.stderr
+                is_stderr = fileobj == process.stderr
                 
                 # Store
                 if is_stderr:

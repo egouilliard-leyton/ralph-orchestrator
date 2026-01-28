@@ -11,6 +11,17 @@ requires-python = ">=3.10"
 dependencies = [
   "PyYAML>=6.0.1",
   "jsonschema>=4.23.0",
+  "fastapi>=0.109.0",
+  "uvicorn>=0.27.0",
+  "pydantic>=2.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "mypy>=1.8.0",
+  "ruff>=0.3.0",
+  "types-PyYAML>=6.0.0",
 ]
 
 [project.scripts]
@@ -21,3 +32,32 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["ralph_orchestrator*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+# Ignore fixture repositories (they contain test files for the fixtures, not for pytest)
+norecursedirs = ["fixtures", ".ralph-session", ".ralph"]
+markers = [
+    "unit: Unit tests (no external dependencies, fast)",
+    "integration: Integration tests (mock Claude + fixtures)",
+    "slow: Tests that take longer than 10 seconds",
+    "autopilot: Autopilot-specific tests",
+]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "types-PyYAML>=6.0.0",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
