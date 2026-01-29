@@ -34,6 +34,14 @@ class EventType(str, Enum):
     ITERATION_STARTED = "iteration_started"
     SESSION_STARTED = "session_started"
     SESSION_ENDED = "session_ended"
+    # Parallel execution events
+    PARALLEL_STARTED = "parallel_started"
+    GROUP_STARTED = "group_started"
+    GROUP_COMPLETED = "group_completed"
+    PARALLEL_COMPLETED = "parallel_completed"
+    # Subtask events
+    SUBTASK_COMPLETE = "subtask_complete"
+    SUBTASK_PROMOTED = "subtask_promoted"
 
 
 @dataclass
@@ -228,6 +236,120 @@ class SessionEndedEvent(OrchestrationEvent):
         return d
 
 
+@dataclass
+class ParallelStartedEvent(OrchestrationEvent):
+    """Event emitted when parallel execution starts."""
+    event_type: EventType = field(init=False, default=EventType.PARALLEL_STARTED)
+    group_count: int = 0
+    task_count: int = 0
+    max_parallel: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "group_count": self.group_count,
+            "task_count": self.task_count,
+            "max_parallel": self.max_parallel,
+        })
+        return d
+
+
+@dataclass
+class GroupStartedEvent(OrchestrationEvent):
+    """Event emitted when a task group starts execution."""
+    event_type: EventType = field(init=False, default=EventType.GROUP_STARTED)
+    group_id: str = ""
+    task_ids: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "group_id": self.group_id,
+            "task_ids": self.task_ids,
+        })
+        return d
+
+
+@dataclass
+class GroupCompletedEvent(OrchestrationEvent):
+    """Event emitted when a task group completes execution."""
+    event_type: EventType = field(init=False, default=EventType.GROUP_COMPLETED)
+    group_id: str = ""
+    success: bool = False
+    tasks_completed: int = 0
+    tasks_failed: int = 0
+    duration_ms: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "group_id": self.group_id,
+            "success": self.success,
+            "tasks_completed": self.tasks_completed,
+            "tasks_failed": self.tasks_failed,
+            "duration_ms": self.duration_ms,
+        })
+        return d
+
+
+@dataclass
+class ParallelCompletedEvent(OrchestrationEvent):
+    """Event emitted when parallel execution completes."""
+    event_type: EventType = field(init=False, default=EventType.PARALLEL_COMPLETED)
+    groups_completed: int = 0
+    groups_failed: int = 0
+    total_tasks_completed: int = 0
+    total_tasks_failed: int = 0
+    duration_ms: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "groups_completed": self.groups_completed,
+            "groups_failed": self.groups_failed,
+            "total_tasks_completed": self.total_tasks_completed,
+            "total_tasks_failed": self.total_tasks_failed,
+            "duration_ms": self.duration_ms,
+        })
+        return d
+
+
+@dataclass
+class SubtaskCompleteEvent(OrchestrationEvent):
+    """Event emitted when a subtask completes."""
+    event_type: EventType = field(init=False, default=EventType.SUBTASK_COMPLETE)
+    task_id: str = ""
+    subtask_id: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "task_id": self.task_id,
+            "subtask_id": self.subtask_id,
+        })
+        return d
+
+
+@dataclass
+class SubtaskPromotedEvent(OrchestrationEvent):
+    """Event emitted when a subtask is promoted to a full task."""
+    event_type: EventType = field(init=False, default=EventType.SUBTASK_PROMOTED)
+    task_id: str = ""
+    subtask_id: str = ""
+    new_task_id: str = ""
+    reason: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        d = super().to_dict()
+        d.update({
+            "task_id": self.task_id,
+            "subtask_id": self.subtask_id,
+            "new_task_id": self.new_task_id,
+            "reason": self.reason,
+        })
+        return d
+
+
 # Type alias for event handlers - uses Any to allow handlers for specific event subtypes
 # This allows both Callable[[OrchestrationEvent], None] and Callable[[TaskStartedEvent], None]
 EventHandler = Callable[[Any], None]
@@ -246,6 +368,8 @@ class OrchestrationOptions:
     post_verify: bool = True
     with_smoke: Optional[bool] = None  # None = use config/task defaults
     with_robot: Optional[bool] = None  # None = use config/task defaults
+    parallel: bool = False  # Enable parallel task execution
+    max_parallel: int = 3  # Maximum parallel task groups
 
 
 @dataclass
@@ -430,7 +554,23 @@ class OrchestrationService:
         review_feedback: Optional[str] = None,
     ):
         """Create task context for prompts."""
-        from ..agents.prompts import TaskContext
+        from ..agents.prompts import TaskContext, SubtaskContext
+
+        # Convert subtasks to SubtaskContext if present
+        subtask_contexts = None
+        if task.subtasks:
+            subtask_contexts = [
+                SubtaskContext(
+                    id=st.id,
+                    title=st.title,
+                    acceptance_criteria=st.acceptance_criteria,
+                    description=st.description,
+                    passes=st.passes,
+                    independent=st.independent,
+                    promoted_to=st.promoted_to,
+                )
+                for st in task.subtasks
+            ]
 
         return TaskContext(
             task_id=task.id,
@@ -441,6 +581,7 @@ class OrchestrationService:
             previous_feedback=previous_feedback,
             gate_output=gate_output,
             review_feedback=review_feedback,
+            subtasks=subtask_contexts,
         )
 
     def _run_implementation(
@@ -592,7 +733,143 @@ class OrchestrationService:
         # Log agent output
         self.exec_log.agent_output("implementation", result.output, max_lines=20)
 
+        # Handle subtask signals (checkpoint mode)
+        if task.subtasks:
+            self._handle_subtask_signals(task, result.output)
+
         return True, result.output, None
+
+    def _handle_subtask_signals(self, task, response: str) -> None:
+        """Process subtask-complete and promote-subtask signals from response.
+
+        Args:
+            task: Parent task containing subtasks.
+            response: Agent response text containing signals.
+        """
+        from ..signals import (
+            find_subtask_completion_signals,
+            find_subtask_promotion_signals,
+        )
+        from ..tasks.prd import save_prd
+
+        # Process subtask completion signals
+        completion_signals = find_subtask_completion_signals(response)
+        for signal in completion_signals:
+            if signal.session_token != self._session_token:
+                self.exec_log.custom(
+                    f"[SUBTASK] Invalid token for {signal.subtask_id}, skipping"
+                )
+                continue
+
+            subtask = self._find_subtask(task, signal.subtask_id)
+            if subtask is None:
+                self.exec_log.custom(
+                    f"[SUBTASK] Unknown subtask {signal.subtask_id}, skipping"
+                )
+                continue
+
+            if subtask.passes:
+                continue  # Already complete
+
+            # Mark subtask as complete
+            subtask.passes = True
+            subtask.notes = signal.content
+            self.session.complete_subtask(task.id, signal.subtask_id)
+            self.timeline.log_event(
+                "subtask_complete",
+                task_id=task.id,
+                subtask_id=signal.subtask_id,
+            )
+            self.exec_log.custom(f"[SUBTASK] {signal.subtask_id} completed")
+
+        # Process promotion signals
+        promotion_signals = find_subtask_promotion_signals(response)
+        for signal in promotion_signals:
+            if signal.session_token != self._session_token:
+                self.exec_log.custom(
+                    f"[SUBTASK] Invalid token for promotion of {signal.subtask_id}, skipping"
+                )
+                continue
+
+            subtask = self._find_subtask(task, signal.subtask_id)
+            if subtask is None:
+                self.exec_log.custom(
+                    f"[SUBTASK] Unknown subtask {signal.subtask_id} for promotion, skipping"
+                )
+                continue
+
+            if subtask.promoted_to:
+                continue  # Already promoted
+
+            # Promote subtask to full task
+            new_task = self._promote_subtask(task, subtask, signal.content)
+            self.exec_log.custom(
+                f"[SUBTASK] {signal.subtask_id} promoted to {new_task.id}"
+            )
+
+        # Save PRD with updated subtask states
+        if completion_signals or promotion_signals:
+            save_prd(self.prd)
+
+    def _find_subtask(self, task, subtask_id: str):
+        """Find a subtask by ID within a task.
+
+        Args:
+            task: Parent task.
+            subtask_id: Subtask ID to find.
+
+        Returns:
+            Subtask object or None if not found.
+        """
+        for subtask in task.subtasks:
+            if subtask.id == subtask_id:
+                return subtask
+        return None
+
+    def _promote_subtask(self, parent_task, subtask, reason: str):
+        """Promote a subtask to a full task.
+
+        Args:
+            parent_task: Parent task containing the subtask.
+            subtask: Subtask to promote.
+            reason: Reason for promotion from the agent.
+
+        Returns:
+            Newly created Task.
+        """
+        from ..tasks.prd import create_task, generate_next_task_id
+
+        new_task_id = generate_next_task_id(self.prd)
+
+        description = (
+            f"Promoted from subtask {subtask.id} of {parent_task.id}.\n\n"
+            f"Original title: {subtask.title}\n"
+        )
+        if subtask.description:
+            description += f"Original description: {subtask.description}\n"
+        description += f"\nPromotion reason: {reason}"
+
+        new_task = create_task(
+            prd=self.prd,
+            title=f"[Promoted] {subtask.title}",
+            description=description,
+            acceptance_criteria=subtask.acceptance_criteria,
+            priority=parent_task.priority + 1,  # Run after parent
+            task_id=new_task_id,
+            save=False,  # We'll save after updating subtask
+        )
+
+        # Mark subtask as promoted
+        subtask.promoted_to = new_task_id
+
+        self.timeline.log_event(
+            "subtask_promoted",
+            task_id=parent_task.id,
+            subtask_id=subtask.id,
+            new_task_id=new_task_id,
+        )
+
+        return new_task
 
     def _run_test_writing(
         self,
@@ -1301,6 +1578,149 @@ class OrchestrationService:
         
         return False
 
+    def _run_subtask_loop(self, parent_task, subtask) -> bool:
+        """Run an independent subtask through its own verification loop.
+
+        Independent subtasks get their own implementation → gates → review cycle
+        using the subtask's acceptance criteria.
+
+        Args:
+            parent_task: Parent task containing the subtask.
+            subtask: Independent subtask to run.
+
+        Returns:
+            True if subtask completed successfully, False otherwise.
+        """
+        from ..agents.prompts import (
+            AgentRole,
+            TaskContext,
+            SubtaskContext,
+            build_implementation_prompt,
+            build_review_prompt,
+            get_allowed_tools_for_role,
+        )
+        from ..signals import (
+            validate_implementation_signal,
+            validate_review_signal,
+            get_feedback_for_missing_signal,
+        )
+        from ..tasks.prd import save_prd
+
+        max_iterations = min(self.options.max_iterations, 50)  # Cap subtask iterations
+        self.exec_log.custom(
+            f"[SUBTASK] Running independent subtask {subtask.id}: {subtask.title}"
+        )
+
+        # Create a pseudo-task context for the subtask
+        subtask_context = TaskContext(
+            task_id=subtask.id,
+            title=subtask.title,
+            description=subtask.description or f"Subtask of {parent_task.id}: {parent_task.title}",
+            acceptance_criteria=subtask.acceptance_criteria,
+            notes="",
+            subtasks=None,
+        )
+
+        feedback = None
+        review_feedback = None
+
+        for iteration in range(1, max_iterations + 1):
+            self.exec_log.custom(f"[SUBTASK {subtask.id}] Iteration {iteration}/{max_iterations}")
+
+            # Step 1: Implementation
+            agent_config = self.config.get_agent_config("implementation")
+            prompt = build_implementation_prompt(
+                task=subtask_context,
+                session_token=self._session_token,
+                project_description=self.prd.description,
+                agents_md_content=self.agents_md_content,
+            )
+
+            if feedback or review_feedback:
+                subtask_context.previous_feedback = feedback
+                subtask_context.review_feedback = review_feedback
+
+            result = self.claude.invoke(
+                prompt=prompt,
+                role="subtask_implementation",
+                task_id=subtask.id,
+                model=agent_config.model,
+                allowed_tools=get_allowed_tools_for_role(AgentRole.IMPLEMENTATION),
+                timeout=agent_config.timeout,
+            )
+
+            if not result.success:
+                feedback = f"Claude CLI error: {result.error}"
+                continue
+
+            validation = validate_implementation_signal(result.output, self._session_token)
+            if not validation.valid:
+                feedback = get_feedback_for_missing_signal("implementation", self._session_token)
+                continue
+
+            # Step 2: Run gates
+            gates_success, gate_failure_output = self._run_gates(parent_task)
+            if not gates_success:
+                feedback = f"Gates failed:\n{gate_failure_output}"
+                continue
+
+            # Step 3: Review
+            review_config = self.config.get_agent_config("review")
+            review_prompt = build_review_prompt(
+                task=subtask_context,
+                session_token=self._session_token,
+                project_description=self.prd.description,
+            )
+
+            review_result = self.claude.invoke(
+                prompt=review_prompt,
+                role="subtask_review",
+                task_id=subtask.id,
+                model=review_config.model,
+                allowed_tools=get_allowed_tools_for_role(AgentRole.REVIEW),
+                timeout=review_config.timeout,
+            )
+
+            if not review_result.success:
+                feedback = f"Review agent error: {review_result.error}"
+                continue
+
+            review_validation, is_approved = validate_review_signal(
+                review_result.output, self._session_token
+            )
+
+            if not review_validation.valid:
+                feedback = get_feedback_for_missing_signal("review", self._session_token)
+                continue
+
+            if is_approved:
+                # Subtask complete!
+                subtask.passes = True
+                subtask.notes = validation.signal.content if validation.signal else "Completed"
+                self.session.complete_subtask(parent_task.id, subtask.id)
+                save_prd(self.prd)
+                self.exec_log.custom(f"[SUBTASK {subtask.id}] Completed successfully")
+                self.timeline.log_event(
+                    "subtask_complete",
+                    task_id=parent_task.id,
+                    subtask_id=subtask.id,
+                    iterations=iteration,
+                )
+                return True
+
+            # Review rejected
+            review_feedback = (
+                review_validation.signal.content
+                if review_validation.signal
+                else "Review rejected"
+            )
+            feedback = None
+
+        self.exec_log.custom(
+            f"[SUBTASK {subtask.id}] Max iterations reached, marking failed"
+        )
+        return False
+
     def _run_task(self, task) -> TaskRunResult:
         """Run a single task through the verified loop.
 
@@ -1322,6 +1742,43 @@ class OrchestrationService:
         self.session.start_task(task.id)
         self.timeline.task_start(task.id, task.title)
         self.exec_log.task_start(task.id, task.title)
+
+        # Run independent subtasks first (before main task loop)
+        if task.subtasks:
+            independent_subtasks = [
+                s for s in task.subtasks
+                if s.independent and not s.passes and not s.promoted_to
+            ]
+            if independent_subtasks:
+                self.exec_log.custom(
+                    f"[SUBTASK] Running {len(independent_subtasks)} independent subtasks first"
+                )
+                for subtask in independent_subtasks:
+                    success = self._run_subtask_loop(task, subtask)
+                    if not success:
+                        # Independent subtask failed - fail the parent task
+                        duration_ms = int((time.time() - start_time) * 1000)
+                        failure_reason = f"Independent subtask {subtask.id} failed"
+                        self.session.fail_task(task.id, failure_reason)
+                        self.timeline.task_failed(task.id, failure_reason, iterations=0)
+                        self.exec_log.task_failed(
+                            task.id, failure_reason, iterations=0,
+                            duration_seconds=duration_ms // 1000
+                        )
+                        self._emit_event(TaskCompletedEvent(
+                            task_id=task.id,
+                            success=False,
+                            iterations=0,
+                            duration_ms=duration_ms,
+                            failure_reason=failure_reason,
+                        ))
+                        return TaskRunResult(
+                            task_id=task.id,
+                            completed=False,
+                            iterations=0,
+                            duration_ms=duration_ms,
+                            failure_reason=failure_reason,
+                        )
 
         iteration = 0
         feedback = None
@@ -1448,6 +1905,181 @@ class OrchestrationService:
             failure_reason=failure_reason,
         )
 
+    def _run_group(self, group) -> Tuple[List[TaskRunResult], int, int]:
+        """Run a single task group sequentially.
+
+        Tasks within a group run sequentially (for now), but groups
+        can run in parallel with each other.
+
+        Args:
+            group: TaskGroup to execute.
+
+        Returns:
+            Tuple of (task_results, completed_count, failed_count).
+        """
+        from ..session import TamperingDetectedError
+
+        task_results = []
+        completed = 0
+        failed = 0
+
+        self._emit_event(GroupStartedEvent(
+            group_id=group.group_id,
+            task_ids=[t.id for t in group.tasks],
+        ))
+
+        group_start = time.time()
+
+        for task in group.tasks:
+            try:
+                result = self._run_task(task)
+                task_results.append(result)
+
+                if result.completed:
+                    completed += 1
+                else:
+                    failed += 1
+                    # Don't stop on failure within a group - continue to maximize parallel work
+
+            except TamperingDetectedError:
+                failed += 1
+                raise  # Re-raise tampering errors
+            except Exception as e:
+                failed += 1
+                self.exec_log.custom(f"[PARALLEL] Task {task.id} failed with error: {e}")
+
+        group_duration = int((time.time() - group_start) * 1000)
+
+        self._emit_event(GroupCompletedEvent(
+            group_id=group.group_id,
+            success=failed == 0,
+            tasks_completed=completed,
+            tasks_failed=failed,
+            duration_ms=group_duration,
+        ))
+
+        return task_results, completed, failed
+
+    def _run_parallel(
+        self,
+        pending_tasks: list,
+        max_parallel: int,
+    ) -> Tuple[List[TaskRunResult], int, int]:
+        """Run tasks in parallel using file-set pre-allocation.
+
+        Args:
+            pending_tasks: List of tasks to run.
+            max_parallel: Maximum parallel groups.
+
+        Returns:
+            Tuple of (all_task_results, completed_count, failed_count).
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from ..parallel import TaskPartitioner
+
+        start_time = time.time()
+
+        # Partition tasks into groups
+        partitioner = TaskPartitioner(max_groups=max_parallel)
+        groups = partitioner.partition(pending_tasks, self.config.repo_root)
+
+        self.exec_log.custom(partitioner.get_partition_summary(groups))
+
+        # Emit parallel started event
+        self._emit_event(ParallelStartedEvent(
+            group_count=len(groups),
+            task_count=len(pending_tasks),
+            max_parallel=max_parallel,
+        ))
+
+        all_results: List[TaskRunResult] = []
+        total_completed = 0
+        total_failed = 0
+        groups_completed = 0
+        groups_failed = 0
+
+        # Run groups in parallel using ThreadPoolExecutor
+        # Note: Groups with overlapping files are separated, so this is safe
+        with ThreadPoolExecutor(max_workers=min(len(groups), max_parallel)) as executor:
+            # Submit all groups
+            future_to_group = {
+                executor.submit(self._run_group, group): group
+                for group in groups
+            }
+
+            # Collect results as they complete
+            for future in as_completed(future_to_group):
+                group = future_to_group[future]
+                try:
+                    results, completed, failed = future.result()
+                    all_results.extend(results)
+                    total_completed += completed
+                    total_failed += failed
+
+                    if failed == 0:
+                        groups_completed += 1
+                    else:
+                        groups_failed += 1
+
+                except Exception as e:
+                    self.exec_log.custom(
+                        f"[PARALLEL] Group {group.group_id} failed with error: {e}"
+                    )
+                    groups_failed += 1
+                    total_failed += len(group.tasks)
+
+        parallel_duration = int((time.time() - start_time) * 1000)
+
+        # Emit parallel completed event
+        self._emit_event(ParallelCompletedEvent(
+            groups_completed=groups_completed,
+            groups_failed=groups_failed,
+            total_tasks_completed=total_completed,
+            total_tasks_failed=total_failed,
+            duration_ms=parallel_duration,
+        ))
+
+        self.exec_log.custom(
+            f"[PARALLEL] Complete: {total_completed} tasks completed, "
+            f"{total_failed} failed across {len(groups)} groups"
+        )
+
+        return all_results, total_completed, total_failed
+
+    def _run_sequential(self, pending_tasks: list) -> Tuple[List[TaskRunResult], int, int]:
+        """Run tasks sequentially (default mode).
+
+        Args:
+            pending_tasks: List of tasks to run.
+
+        Returns:
+            Tuple of (task_results, completed_count, failed_count).
+        """
+        from ..session import TamperingDetectedError
+
+        task_results = []
+        tasks_completed = 0
+        tasks_failed = 0
+
+        for task in pending_tasks:
+            try:
+                result = self._run_task(task)
+                task_results.append(result)
+
+                if result.completed:
+                    tasks_completed += 1
+                else:
+                    tasks_failed += 1
+                    # Stop on first failure
+                    break
+
+            except TamperingDetectedError:
+                raise  # Re-raise to handle at run() level
+            except KeyboardInterrupt:
+                raise  # Re-raise to handle at run() level
+
+        return task_results, tasks_completed, tasks_failed
+
     def run(self) -> OrchestrationResult:
         """Execute the verified task loop.
 
@@ -1498,61 +2130,62 @@ class OrchestrationService:
                 session_id=self.session.session_id,
             )
 
-        # Execute tasks
-        task_results = []
+        # Execute tasks - parallel or sequential
+        task_results: List[TaskRunResult] = []
         tasks_completed = 0
         tasks_failed = 0
 
-        for task in pending_tasks:
-            try:
-                result = self._run_task(task)
-                task_results.append(result)
-
-                if result.completed:
-                    tasks_completed += 1
-                else:
-                    tasks_failed += 1
-                    # Stop on first failure unless configured otherwise
-                    break
-
-            except TamperingDetectedError as e:
-                self.session.end_session("failed", str(e))
-
-                # Emit session ended event
-                self._emit_event(SessionEndedEvent(
-                    session_id=self.session.session_id,
-                    status="failed",
-                    tasks_completed=tasks_completed,
-                    tasks_failed=tasks_failed + 1,
-                    duration_ms=int((time.time() - start_time) * 1000),
-                ))
-
-                return OrchestrationResult(
-                    exit_code=ExitCode.CHECKSUM_TAMPERING,
-                    tasks_completed=tasks_completed,
-                    tasks_failed=tasks_failed + 1,
-                    task_results=task_results,
-                    error=str(e),
-                    session_id=self.session.session_id,
+        try:
+            if self.options.parallel and len(pending_tasks) > 1:
+                self.exec_log.custom(
+                    f"[PARALLEL] Running {len(pending_tasks)} tasks in parallel mode "
+                    f"(max {self.options.max_parallel} groups)"
                 )
-            except KeyboardInterrupt:
-                self.session.end_session("aborted")
-
-                # Emit session ended event
-                self._emit_event(SessionEndedEvent(
-                    session_id=self.session.session_id,
-                    status="aborted",
-                    tasks_completed=tasks_completed,
-                    tasks_failed=0,
-                    duration_ms=int((time.time() - start_time) * 1000),
-                ))
-
-                return OrchestrationResult(
-                    exit_code=ExitCode.USER_ABORT,
-                    tasks_completed=tasks_completed,
-                    task_results=task_results,
-                    session_id=self.session.session_id,
+                task_results, tasks_completed, tasks_failed = self._run_parallel(
+                    pending_tasks, self.options.max_parallel
                 )
+            else:
+                task_results, tasks_completed, tasks_failed = self._run_sequential(
+                    pending_tasks
+                )
+        except TamperingDetectedError as e:
+            self.session.end_session("failed", str(e))
+
+            # Emit session ended event
+            self._emit_event(SessionEndedEvent(
+                session_id=self.session.session_id,
+                status="failed",
+                tasks_completed=tasks_completed,
+                tasks_failed=tasks_failed + 1,
+                duration_ms=int((time.time() - start_time) * 1000),
+            ))
+
+            return OrchestrationResult(
+                exit_code=ExitCode.CHECKSUM_TAMPERING,
+                tasks_completed=tasks_completed,
+                tasks_failed=tasks_failed + 1,
+                task_results=task_results,
+                error=str(e),
+                session_id=self.session.session_id,
+            )
+        except KeyboardInterrupt:
+            self.session.end_session("aborted")
+
+            # Emit session ended event
+            self._emit_event(SessionEndedEvent(
+                session_id=self.session.session_id,
+                status="aborted",
+                tasks_completed=tasks_completed,
+                tasks_failed=0,
+                duration_ms=int((time.time() - start_time) * 1000),
+            ))
+
+            return OrchestrationResult(
+                exit_code=ExitCode.USER_ABORT,
+                tasks_completed=tasks_completed,
+                task_results=task_results,
+                session_id=self.session.session_id,
+            )
 
         # Calculate totals
         task_duration_ms = int((time.time() - start_time) * 1000)

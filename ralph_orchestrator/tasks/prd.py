@@ -23,23 +23,40 @@ def utc_now_iso() -> str:
 
 @dataclass
 class Subtask:
-    """A subtask within a parent task."""
+    """A subtask within a parent task.
+
+    Subtasks support two execution modes:
+    - Checkpoint (default): Single agent handles all subtasks, signals progress
+    - Independent (independent=True): Gets own verification loop with review
+
+    Subtasks can also be promoted to full tasks via <promote-subtask> signal.
+    """
     id: str
     title: str
     acceptance_criteria: List[str]
     passes: bool = False
     notes: str = ""
-    
+    description: str = ""  # Optional detailed description
+    independent: bool = False  # If True, gets own verification loop
+    promoted_to: Optional[str] = None  # Task ID if escalated to full task
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        return {
+        result: Dict[str, Any] = {
             "id": self.id,
             "title": self.title,
             "acceptanceCriteria": self.acceptance_criteria,
             "passes": self.passes,
             "notes": self.notes,
         }
-    
+        if self.description:
+            result["description"] = self.description
+        if self.independent:
+            result["independent"] = self.independent
+        if self.promoted_to:
+            result["promotedTo"] = self.promoted_to
+        return result
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Subtask":
         """Create from dictionary."""
@@ -49,6 +66,9 @@ class Subtask:
             acceptance_criteria=data.get("acceptanceCriteria", []),
             passes=data.get("passes", False),
             notes=data.get("notes", ""),
+            description=data.get("description", ""),
+            independent=data.get("independent", False),
+            promoted_to=data.get("promotedTo"),
         )
 
 

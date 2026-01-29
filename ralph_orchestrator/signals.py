@@ -28,6 +28,9 @@ class SignalType(str, Enum):
     UI_TESTS_DONE = "ui-tests-done"
     ROBOT_PLAN = "robot-plan"
     ROBOT_FIX_DONE = "robot-fix-done"
+    # Subtask signals for checkpoint and escalation
+    SUBTASK_COMPLETE = "subtask-complete"
+    PROMOTE_SUBTASK = "promote-subtask"
 
 
 # Signals that indicate completion for different roles
@@ -40,6 +43,9 @@ PLANNING_SIGNALS = {SignalType.UI_PLAN, SignalType.ROBOT_PLAN}
 UI_FIX_SIGNALS = {SignalType.UI_FIX_DONE}
 UI_TESTING_SIGNALS = {SignalType.UI_TESTS_DONE}
 ROBOT_FIX_SIGNALS = {SignalType.ROBOT_FIX_DONE}
+# Subtask signals
+SUBTASK_COMPLETE_SIGNALS = {SignalType.SUBTASK_COMPLETE}
+SUBTASK_PROMOTION_SIGNALS = {SignalType.PROMOTE_SUBTASK}
 
 
 @dataclass
@@ -49,16 +55,27 @@ class Signal:
     session_token: str
     content: str
     raw_match: str
-    
+    subtask_id: Optional[str] = None  # For subtask-complete and promote-subtask signals
+
     @property
     def is_approval(self) -> bool:
         """Check if signal indicates approval."""
         return self.signal_type in REVIEW_APPROVAL_SIGNALS
-    
+
     @property
     def is_rejection(self) -> bool:
         """Check if signal indicates rejection."""
         return self.signal_type in REVIEW_REJECTION_SIGNALS
+
+    @property
+    def is_subtask_complete(self) -> bool:
+        """Check if signal indicates subtask completion."""
+        return self.signal_type in SUBTASK_COMPLETE_SIGNALS
+
+    @property
+    def is_subtask_promotion(self) -> bool:
+        """Check if signal indicates subtask promotion request."""
+        return self.signal_type in SUBTASK_PROMOTION_SIGNALS
 
 
 @dataclass
@@ -485,3 +502,153 @@ def parse_fix_done_signal(response: str) -> Optional[Signal]:
         Signal object if found, None otherwise.
     """
     return find_signal(response, FIX_SIGNALS)
+
+
+# =============================================================================
+# Subtask Signal Parsing Functions
+# =============================================================================
+
+def parse_subtask_signals(response: str) -> List[Signal]:
+    """Parse all subtask-complete and promote-subtask signals from a response.
+
+    Subtask signals have the format:
+    - <subtask-complete id="T-001.2" session="TOKEN">content</subtask-complete>
+    - <promote-subtask id="T-001.3" session="TOKEN">reason</promote-subtask>
+
+    Args:
+        response: Full text response from Claude CLI.
+
+    Returns:
+        List of Signal objects with subtask_id populated.
+    """
+    signals = []
+
+    # Pattern to match subtask signals with id attribute
+    # Matches: <signal-type id="T-001.X" session="token">content</signal-type>
+    subtask_signal_pattern = re.compile(
+        r'<(subtask-complete|promote-subtask)\s+id="([^"]+)"\s+session="([^"]+)"[^>]*>'
+        r'(.*?)'
+        r'</\1>',
+        re.DOTALL | re.IGNORECASE
+    )
+
+    for match in subtask_signal_pattern.finditer(response):
+        signal_type_str = match.group(1).lower()
+        subtask_id = match.group(2)
+        session_token = match.group(3)
+        content = match.group(4).strip()
+
+        try:
+            signal_type = SignalType(signal_type_str)
+            signals.append(Signal(
+                signal_type=signal_type,
+                session_token=session_token,
+                content=content,
+                raw_match=match.group(0),
+                subtask_id=subtask_id,
+            ))
+        except ValueError:
+            # Unknown signal type, skip
+            pass
+
+    return signals
+
+
+def validate_subtask_signal(
+    response: str,
+    subtask_id: str,
+    expected_token: str,
+) -> SignalValidationResult:
+    """Validate a subtask completion signal for a specific subtask.
+
+    Args:
+        response: Full text response from Claude CLI.
+        subtask_id: Expected subtask ID (e.g., "T-001.2").
+        expected_token: Expected session token.
+
+    Returns:
+        SignalValidationResult with validation outcome.
+    """
+    signals = parse_subtask_signals(response)
+
+    # Find signal for this specific subtask
+    for signal in signals:
+        if signal.subtask_id == subtask_id and signal.is_subtask_complete:
+            if signal.session_token != expected_token:
+                return SignalValidationResult(
+                    valid=False,
+                    signal=signal,
+                    error=f"Session token mismatch: expected {expected_token}, "
+                          f"got {signal.session_token}",
+                    expected_token=expected_token,
+                    received_token=signal.session_token,
+                )
+            return SignalValidationResult(
+                valid=True,
+                signal=signal,
+                expected_token=expected_token,
+                received_token=signal.session_token,
+            )
+
+    return SignalValidationResult(
+        valid=False,
+        error=f"No subtask-complete signal found for {subtask_id}",
+        expected_token=expected_token,
+    )
+
+
+def find_subtask_completion_signals(response: str) -> List[Signal]:
+    """Find all subtask-complete signals in a response.
+
+    Args:
+        response: Full text response from Claude CLI.
+
+    Returns:
+        List of Signal objects for completed subtasks.
+    """
+    signals = parse_subtask_signals(response)
+    return [s for s in signals if s.is_subtask_complete]
+
+
+def find_subtask_promotion_signals(response: str) -> List[Signal]:
+    """Find all promote-subtask signals in a response.
+
+    Args:
+        response: Full text response from Claude CLI.
+
+    Returns:
+        List of Signal objects for subtasks to be promoted.
+    """
+    signals = parse_subtask_signals(response)
+    return [s for s in signals if s.is_subtask_promotion]
+
+
+def get_subtask_signal_format_example(subtask_id: str, token: str) -> str:
+    """Get example of correct subtask signal format for feedback.
+
+    Args:
+        subtask_id: Subtask ID to include in example.
+        token: Session token to include in example.
+
+    Returns:
+        Example signal string.
+    """
+    return f'''<subtask-complete id="{subtask_id}" session="{token}">
+Summary of what was done for this subtask.
+</subtask-complete>'''
+
+
+def get_subtask_promotion_format_example(subtask_id: str, token: str) -> str:
+    """Get example of correct subtask promotion signal format.
+
+    Args:
+        subtask_id: Subtask ID to include in example.
+        token: Session token to include in example.
+
+    Returns:
+        Example signal string.
+    """
+    return f'''<promote-subtask id="{subtask_id}" session="{token}">
+Reason for promotion: This subtask is too complex and needs its own
+test suite and review cycle.
+</promote-subtask>'''

@@ -150,7 +150,7 @@
     },
     "Subtask": {
       "type": "object",
-      "description": "A subtask within a parent task",
+      "description": "A subtask within a parent task. Supports checkpoint mode (default) where single agent signals progress, or independent mode where subtask gets own verification loop.",
       "required": ["id", "title", "acceptanceCriteria", "passes"],
       "properties": {
         "id": {
@@ -163,6 +163,12 @@
           "description": "Short subtask title",
           "minLength": 1,
           "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional detailed description of the subtask",
+          "default": "",
+          "maxLength": 2000
         },
         "acceptanceCriteria": {
           "type": "array",
@@ -183,6 +189,16 @@
           "description": "Subtask notes",
           "default": "",
           "maxLength": 2000
+        },
+        "independent": {
+          "type": "boolean",
+          "description": "If true, subtask gets its own verification loop with review. Default false (checkpoint mode).",
+          "default": false
+        },
+        "promotedTo": {
+          "type": ["string", "null"],
+          "description": "Task ID if this subtask was promoted to a full task via escalation",
+          "pattern": "^T-[0-9]{3}$"
         }
       },
       "additionalProperties": false
