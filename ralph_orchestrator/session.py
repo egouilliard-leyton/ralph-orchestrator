@@ -82,7 +82,8 @@ class TaskStatusEntry:
     iterations: int = 0
     last_failure: Optional[str] = None
     agent_outputs: Dict[str, str] = field(default_factory=dict)
-    
+    subtask_progress: Dict[str, bool] = field(default_factory=dict)  # subtask_id -> passes
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
         result: Dict[str, Any] = {"passes": self.passes}
@@ -96,8 +97,10 @@ class TaskStatusEntry:
             result["last_failure"] = self.last_failure
         if self.agent_outputs:
             result["agent_outputs"] = self.agent_outputs
+        if self.subtask_progress:
+            result["subtask_progress"] = self.subtask_progress
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TaskStatusEntry":
         """Create from dictionary."""
@@ -108,6 +111,41 @@ class TaskStatusEntry:
             iterations=data.get("iterations", 0),
             last_failure=data.get("last_failure"),
             agent_outputs=data.get("agent_outputs", {}),
+            subtask_progress=data.get("subtask_progress", {}),
+        )
+
+
+@dataclass
+class GroupStatus:
+    """Status for a parallel task group."""
+    group_id: str
+    task_ids: List[str]
+    status: str = "pending"  # pending, running, completed, failed
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        result: Dict[str, Any] = {
+            "group_id": self.group_id,
+            "task_ids": self.task_ids,
+            "status": self.status,
+        }
+        if self.started_at:
+            result["started_at"] = self.started_at
+        if self.completed_at:
+            result["completed_at"] = self.completed_at
+        return result
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "GroupStatus":
+        """Create from dictionary."""
+        return cls(
+            group_id=data["group_id"],
+            task_ids=data.get("task_ids", []),
+            status=data.get("status", "pending"),
+            started_at=data.get("started_at"),
+            completed_at=data.get("completed_at"),
         )
 
 
@@ -117,32 +155,43 @@ class TaskStatus:
     checksum: str
     last_updated: str
     tasks: Dict[str, TaskStatusEntry] = field(default_factory=dict)
-    
+    groups: Dict[str, GroupStatus] = field(default_factory=dict)  # For parallel execution
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary (without checksum for hashing)."""
-        return {
+        result = {
             "checksum": self.checksum,
             "last_updated": self.last_updated,
             "tasks": {k: v.to_dict() for k, v in self.tasks.items()},
         }
-    
+        if self.groups:
+            result["groups"] = {k: v.to_dict() for k, v in self.groups.items()}
+        return result
+
     def to_dict_for_checksum(self) -> Dict[str, Any]:
         """Convert to dictionary for checksum calculation (without checksum field)."""
-        return {
+        result = {
             "last_updated": self.last_updated,
             "tasks": {k: v.to_dict() for k, v in self.tasks.items()},
         }
-    
+        if self.groups:
+            result["groups"] = {k: v.to_dict() for k, v in self.groups.items()}
+        return result
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TaskStatus":
         """Create from dictionary."""
         tasks = {}
         for task_id, entry_data in data.get("tasks", {}).items():
             tasks[task_id] = TaskStatusEntry.from_dict(entry_data)
+        groups = {}
+        for group_id, group_data in data.get("groups", {}).items():
+            groups[group_id] = GroupStatus.from_dict(group_data)
         return cls(
             checksum=data.get("checksum", ""),
             last_updated=data.get("last_updated", ""),
             tasks=tasks,
+            groups=groups,
         )
 
 
@@ -580,13 +629,94 @@ class Session:
         """Record the path to an agent's output log."""
         if self.task_status is None:
             raise RuntimeError("Session not initialized")
-        
+
         if task_id not in self.task_status.tasks:
             self.task_status.tasks[task_id] = TaskStatusEntry()
-        
+
         self.task_status.tasks[task_id].agent_outputs[role] = log_path
         self._save_task_status()
-    
+
+    def complete_subtask(self, task_id: str, subtask_id: str) -> None:
+        """Mark a subtask as completed.
+
+        Args:
+            task_id: Parent task ID.
+            subtask_id: Subtask ID to mark complete.
+        """
+        if self.task_status is None:
+            raise RuntimeError("Session not initialized")
+
+        if task_id not in self.task_status.tasks:
+            self.task_status.tasks[task_id] = TaskStatusEntry()
+
+        self.task_status.tasks[task_id].subtask_progress[subtask_id] = True
+        self._save_task_status()
+
+    def get_subtask_progress(self, task_id: str) -> Dict[str, bool]:
+        """Get subtask completion progress for a task.
+
+        Args:
+            task_id: Task ID to get progress for.
+
+        Returns:
+            Dictionary mapping subtask IDs to completion status.
+        """
+        if self.task_status is None:
+            raise RuntimeError("Session not initialized")
+
+        if task_id not in self.task_status.tasks:
+            return {}
+
+        return self.task_status.tasks[task_id].subtask_progress.copy()
+
+    def start_group(self, group_id: str, task_ids: List[str]) -> None:
+        """Start tracking a parallel task group.
+
+        Args:
+            group_id: Unique identifier for the group.
+            task_ids: List of task IDs in this group.
+        """
+        if self.task_status is None:
+            raise RuntimeError("Session not initialized")
+
+        self.task_status.groups[group_id] = GroupStatus(
+            group_id=group_id,
+            task_ids=task_ids,
+            status="running",
+            started_at=utc_now_iso(),
+        )
+        self._save_task_status()
+
+    def complete_group(self, group_id: str, success: bool = True) -> None:
+        """Mark a parallel task group as completed.
+
+        Args:
+            group_id: Group identifier.
+            success: Whether the group completed successfully.
+        """
+        if self.task_status is None:
+            raise RuntimeError("Session not initialized")
+
+        if group_id in self.task_status.groups:
+            group = self.task_status.groups[group_id]
+            group.status = "completed" if success else "failed"
+            group.completed_at = utc_now_iso()
+            self._save_task_status()
+
+    def get_group_status(self, group_id: str) -> Optional[GroupStatus]:
+        """Get status for a parallel task group.
+
+        Args:
+            group_id: Group identifier.
+
+        Returns:
+            GroupStatus or None if not found.
+        """
+        if self.task_status is None:
+            raise RuntimeError("Session not initialized")
+
+        return self.task_status.groups.get(group_id)
+
     def save(self) -> None:
         """Save session state to disk.
 

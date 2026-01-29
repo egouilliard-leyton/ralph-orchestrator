@@ -29,6 +29,18 @@ class AgentRole(str, Enum):
 
 
 @dataclass
+class SubtaskContext:
+    """Context for a subtask within a task."""
+    id: str
+    title: str
+    acceptance_criteria: List[str]
+    description: str = ""
+    passes: bool = False
+    independent: bool = False
+    promoted_to: Optional[str] = None
+
+
+@dataclass
 class TaskContext:
     """Context for a task being executed."""
     task_id: str
@@ -39,6 +51,67 @@ class TaskContext:
     previous_feedback: Optional[str] = None
     gate_output: Optional[str] = None
     review_feedback: Optional[str] = None
+    subtasks: Optional[List[SubtaskContext]] = None
+
+
+def _build_subtask_section(
+    subtasks: List[SubtaskContext],
+    session_token: str,
+) -> str:
+    """Build the subtask section for implementation prompt.
+
+    Args:
+        subtasks: List of subtask contexts.
+        session_token: Session token for signals.
+
+    Returns:
+        Formatted subtask section string.
+    """
+    if not subtasks:
+        return ""
+
+    lines = ["## Subtasks\n", "Complete these subtasks as part of this task:\n"]
+
+    for st in subtasks:
+        if st.passes:
+            lines.append(f"- [x] **{st.id}**: {st.title} (COMPLETED)")
+        elif st.promoted_to:
+            lines.append(f"- [~] **{st.id}**: {st.title} (PROMOTED to {st.promoted_to})")
+        elif st.independent:
+            lines.append(f"- [ ] **{st.id}**: {st.title} (will be handled separately)")
+        else:
+            lines.append(f"- [ ] **{st.id}**: {st.title}")
+            if st.description:
+                lines.append(f"      {st.description}")
+            criteria_str = ", ".join(st.acceptance_criteria[:3])
+            if len(st.acceptance_criteria) > 3:
+                criteria_str += f", ... ({len(st.acceptance_criteria)} total)"
+            lines.append(f"      Criteria: {criteria_str}")
+
+    # Add instructions for signaling subtask progress
+    pending_subtasks = [s for s in subtasks if not s.passes and not s.independent and not s.promoted_to]
+    if pending_subtasks:
+        lines.append(f"""
+### Subtask Signals
+
+After completing each subtask, signal progress:
+```
+<subtask-complete id="T-001.X" session="{session_token}">
+Summary of what was done for this subtask.
+</subtask-complete>
+```
+
+If a subtask is too complex and needs independent testing/review, escalate it:
+```
+<promote-subtask id="T-001.X" session="{session_token}">
+Reason for promotion (e.g., needs own test suite, affects multiple modules)
+</promote-subtask>
+```
+
+You can complete multiple subtasks and signal each one, then signal task-done at the end.
+""")
+
+    return "\n".join(lines)
 
 
 def build_implementation_prompt(
@@ -49,19 +122,19 @@ def build_implementation_prompt(
     report_path: Optional[str] = None,
 ) -> str:
     """Build prompt for implementation agent.
-    
+
     Args:
         task: Task context with description and criteria.
         session_token: Session token for completion signal.
         project_description: Project description from prd.json.
         agents_md_content: Content of AGENTS.md for context.
         report_path: Path to write agent report (append-only).
-        
+
     Returns:
         Complete prompt string.
     """
     criteria_list = "\n".join(f"- {c}" for c in task.acceptance_criteria)
-    
+
     feedback_section = ""
     if task.previous_feedback:
         feedback_section = f"""
@@ -73,7 +146,7 @@ The previous attempt had issues that need to be addressed:
 
 Please address these issues in this iteration.
 """
-    
+
     if task.gate_output:
         feedback_section += f"""
 ## Gate Failure Output
@@ -86,7 +159,7 @@ The build/test gates failed with the following output:
 
 Please fix these issues.
 """
-    
+
     if task.review_feedback:
         feedback_section += f"""
 ## Review Feedback
@@ -97,7 +170,7 @@ The code review found the following issues:
 
 Please address these issues to get approval.
 """
-    
+
     agents_section = ""
     if agents_md_content:
         agents_section = f"""
@@ -105,7 +178,7 @@ Please address these issues to get approval.
 
 {agents_md_content}
 """
-    
+
     report_section = ""
     if report_path:
         report_section = f"""
@@ -121,7 +194,12 @@ Format:
 - Notes for next iteration (if any)
 ```
 """
-    
+
+    # Build subtask section if task has subtasks
+    subtask_section = ""
+    if task.subtasks:
+        subtask_section = _build_subtask_section(task.subtasks, session_token)
+
     return f"""# Implementation Task
 
 You are implementing a task for a software project.
@@ -137,6 +215,7 @@ You are implementing a task for a software project.
 
 {criteria_list}
 {agents_section}
+{subtask_section}
 {feedback_section}{report_section}
 ## Instructions
 
