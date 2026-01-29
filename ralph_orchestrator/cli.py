@@ -171,6 +171,17 @@ def command_init(args: argparse.Namespace) -> int:
         eprint(str(e))
         return 1
 
+    # For Python template, auto-create pyproject.toml if missing
+    pyproject_created = False
+    if template == "python" and not Path("pyproject.toml").exists():
+        pyproject_starter = PROJECT_ROOT / "templates/pyproject.toml.starter"
+        if pyproject_starter.exists():
+            try:
+                copy_template_file(pyproject_starter, Path("pyproject.toml"), force=args.force)
+                pyproject_created = True
+            except FileExistsError:
+                pass  # Already exists, skip
+
     # Validate generated config
     try:
         cfg = load_config(out_dir / "ralph.yml")
@@ -185,6 +196,8 @@ def command_init(args: argparse.Namespace) -> int:
     print(f"- {out_dir / 'progress.txt'}")
     if not args.no_agents_md:
         print("- AGENTS.md")
+    if pyproject_created:
+        print("- pyproject.toml (starter file for pytest/mypy/ruff)")
     print("")
     print("Next:")
     print("- Review `.ralph/ralph.yml` and customize gates/services if needed")
@@ -275,6 +288,24 @@ def command_scan(args: argparse.Namespace) -> int:
     if tasks_path:
         print(f"{'✓' if tasks_ok else '⚠'} tasks: {tasks_path}")
 
+    # Check for skippable fatal gates
+    if config_ok:
+        try:
+            from .config import load_config as load_full_config
+            from .gates import check_skippable_fatal_gates
+
+            full_cfg = load_full_config(config_path)
+            skippable = check_skippable_fatal_gates(full_cfg, Path.cwd())
+            if skippable:
+                print("")
+                print("⚠ WARNING: The following fatal gates will be SKIPPED:")
+                for gate_name, missing_file in skippable:
+                    print(f"  - {gate_name}: '{missing_file}' not found")
+                print("  Tests may be written but never executed!")
+                print("  Fix: Create the missing file(s) or remove 'when:' conditions from .ralph/ralph.yml")
+        except Exception:
+            pass  # Don't fail scan if gate check fails
+
     return 0 if config_ok else 2
 
 
@@ -297,6 +328,8 @@ def command_run(args: argparse.Namespace) -> int:
         verbose=getattr(args, 'verbose', False),
         with_smoke=getattr(args, 'with_smoke', None),
         with_robot=getattr(args, 'with_robot', None),
+        parallel=getattr(args, 'parallel', False),
+        max_parallel=getattr(args, 'max_parallel', 3),
     )
 
     result = run_tasks(
@@ -914,6 +947,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run Robot Framework tests for frontend tasks")
     sp.add_argument("--no-robot", action="store_false", dest="with_robot",
         help="Skip Robot Framework tests")
+    # Parallel execution flags
+    sp.add_argument("--parallel", action="store_true", default=False,
+        help="Run tasks in parallel when possible (using file-set pre-allocation)")
+    sp.add_argument("--max-parallel", type=int, default=3,
+        help="Maximum number of parallel task groups (default: 3)")
     sp.set_defaults(func=command_run)
 
     sp = sub.add_parser("verify", help="Run post-completion verification")

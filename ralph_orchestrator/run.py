@@ -82,6 +82,8 @@ class RunOptions:
     verbose: bool = False
     with_smoke: Optional[bool] = None  # None = use config/task defaults
     with_robot: Optional[bool] = None  # None = use config/task defaults
+    parallel: bool = False  # Enable parallel task execution
+    max_parallel: int = 3  # Maximum parallel task groups
 
     def to_orchestration_options(self) -> OrchestrationOptions:
         """Convert to OrchestrationOptions for the service."""
@@ -96,6 +98,8 @@ class RunOptions:
             post_verify=self.post_verify,
             with_smoke=self.with_smoke,
             with_robot=self.with_robot,
+            parallel=self.parallel,
+            max_parallel=self.max_parallel,
         )
 
 
