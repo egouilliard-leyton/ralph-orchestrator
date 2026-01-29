@@ -909,6 +909,162 @@ def command_tasks(args: argparse.Namespace) -> int:
     return 0
 
 
+def command_schedule(args: argparse.Namespace) -> int:
+    """Manage autopilot scheduling."""
+    from .config import load_config as load_full_config
+    from .schedule import (
+        ScheduleConfig,
+        create_schedule_config_from_ralph_config,
+        install_schedule,
+        uninstall_schedule,
+        get_schedule_status,
+        SCHEDULE_MAPPINGS,
+    )
+
+    config_path = Path(args.config) if args.config else default_config_path()
+
+    # Load config
+    try:
+        ralph_config = load_full_config(config_path)
+    except FileNotFoundError:
+        eprint(f"Config not found: {config_path}")
+        eprint("Run 'ralph init' first to create configuration.")
+        return 2
+    except ValueError as e:
+        eprint(f"Invalid config: {e}")
+        return 2
+
+    schedule_mode = getattr(args, "schedule_mode", None)
+
+    if schedule_mode == "install":
+        # Check if schedule is configured
+        if not ralph_config.autopilot.schedule:
+            eprint("No schedule configured in ralph.yml")
+            eprint("")
+            eprint("Add to .ralph/ralph.yml:")
+            eprint("")
+            eprint("  autopilot:")
+            eprint("    enabled: true")
+            eprint("    schedule: daily        # hourly, daily, weekly, weekdays, twice-daily")
+            eprint("    schedule_time: '02:00' # 24h format")
+            return 2
+
+        schedule_config = create_schedule_config_from_ralph_config(ralph_config)
+        if not schedule_config:
+            eprint("Failed to create schedule configuration")
+            return 1
+
+        result = install_schedule(schedule_config)
+        if result.success:
+            print(result.message)
+            print("")
+            mapping = SCHEDULE_MAPPINGS.get(schedule_config.schedule, {})
+            desc = mapping.get("description", schedule_config.schedule)
+            desc = desc.format(
+                time=schedule_config.schedule_time,
+                time2=f"{schedule_config.second_hour:02d}:{schedule_config.minute:02d}",
+            )
+            print(f"Schedule: {desc}")
+            print(f"Project: {schedule_config.project_path}")
+            if result.files_created:
+                print(f"Files: {', '.join(str(f) for f in result.files_created)}")
+            return 0
+        else:
+            eprint(result.message)
+            return 1
+
+    elif schedule_mode == "uninstall":
+        # Create config even without schedule set (to find existing service)
+        schedule_config = ScheduleConfig(
+            schedule=ralph_config.autopilot.schedule or "daily",
+            schedule_time=ralph_config.autopilot.schedule_time,
+            project_path=ralph_config.repo_root,
+            project_name=ralph_config.repo_root.name,
+        )
+
+        result = uninstall_schedule(schedule_config)
+        if result.success:
+            print(result.message)
+            return 0
+        else:
+            eprint(result.message)
+            return 1
+
+    elif schedule_mode == "status":
+        # Create config even without schedule set (to check status)
+        schedule_config = ScheduleConfig(
+            schedule=ralph_config.autopilot.schedule or "daily",
+            schedule_time=ralph_config.autopilot.schedule_time,
+            project_path=ralph_config.repo_root,
+            project_name=ralph_config.repo_root.name,
+        )
+
+        status = get_schedule_status(schedule_config)
+
+        print("RALPH SCHEDULE STATUS")
+        print("---------------------")
+        print(f"Platform: {status.platform}")
+        print(f"Installed: {'Yes' if status.installed else 'No'}")
+
+        if status.installed:
+            print(f"Running: {'Yes' if status.running else 'No'}")
+            if status.schedule:
+                mapping = SCHEDULE_MAPPINGS.get(status.schedule, {})
+                desc = mapping.get("description", status.schedule)
+                desc = desc.format(
+                    time=ralph_config.autopilot.schedule_time,
+                    time2=f"{schedule_config.second_hour:02d}:{schedule_config.minute:02d}",
+                )
+                print(f"Schedule: {desc}")
+            if status.next_run:
+                print(f"Next run: {status.next_run}")
+            if status.files:
+                print(f"Files:")
+                for f in status.files:
+                    print(f"  - {f}")
+        else:
+            # Show configured schedule if any
+            if ralph_config.autopilot.schedule:
+                print("")
+                print("Configured (not installed):")
+                print(f"  schedule: {ralph_config.autopilot.schedule}")
+                print(f"  schedule_time: {ralph_config.autopilot.schedule_time}")
+                print("")
+                print("Run 'ralph schedule install' to install the schedule.")
+            else:
+                print("")
+                print("No schedule configured. Add to .ralph/ralph.yml:")
+                print("")
+                print("  autopilot:")
+                print("    schedule: daily")
+                print("    schedule_time: '02:00'")
+
+        return 0
+
+    elif schedule_mode == "run":
+        # Manually trigger a scheduled run
+        print("Running autopilot manually...")
+        from .autopilot import run_autopilot, AutopilotOptions
+
+        options = AutopilotOptions(
+            verbose=getattr(args, 'verbose', False),
+        )
+
+        result = run_autopilot(
+            config_path=config_path,
+            options=options,
+        )
+
+        if result.error:
+            eprint(f"Error: {result.error}")
+
+        return result.exit_code.value
+
+    else:
+        eprint("Unknown schedule mode. Use: install, uninstall, status, or run")
+        return 2
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="ralph", description="Ralph Orchestrator CLI")
     p.add_argument("-V", "--version", action="version", version=f"ralph {__version__}")
@@ -1043,6 +1199,39 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("validate-tasks", help="Validate prd.json against schema")
     sp.add_argument("--path", default=None, help="Path to prd.json (default: .ralph/prd.json)")
     sp.set_defaults(func=command_validate_tasks)
+
+    # Schedule command with subcommands
+    sp_schedule = sub.add_parser("schedule", help="Manage autopilot scheduling")
+    schedule_sub = sp_schedule.add_subparsers(dest="schedule_mode", required=True)
+
+    sp_schedule_install = schedule_sub.add_parser(
+        "install",
+        help="Install system service for scheduled autopilot runs",
+    )
+    sp_schedule_install.set_defaults(func=command_schedule)
+
+    sp_schedule_uninstall = schedule_sub.add_parser(
+        "uninstall",
+        help="Remove scheduled autopilot service",
+    )
+    sp_schedule_uninstall.set_defaults(func=command_schedule)
+
+    sp_schedule_status = schedule_sub.add_parser(
+        "status",
+        help="Show status of scheduled autopilot",
+    )
+    sp_schedule_status.set_defaults(func=command_schedule)
+
+    sp_schedule_run = schedule_sub.add_parser(
+        "run",
+        help="Manually trigger a scheduled autopilot run",
+    )
+    sp_schedule_run.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Verbose output",
+    )
+    sp_schedule_run.set_defaults(func=command_schedule)
 
     # Serve command - starts the FastAPI web server
     sp = sub.add_parser("serve", help="Start the Ralph web UI server")
