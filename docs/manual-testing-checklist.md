@@ -52,6 +52,28 @@ This document provides a comprehensive manual testing checklist for Ralph Orches
 - [ ] Branch created with correct name
 - [ ] PR opened on completion
 
+### Parallel Execution Tests
+
+- [ ] `ralph run --parallel` enables parallel mode
+- [ ] `ralph run --parallel --max-parallel 5` limits concurrent groups
+- [ ] Tasks partitioned by file overlap analysis
+- [ ] Non-overlapping tasks run concurrently
+- [ ] Overlapping tasks run in separate groups
+- [ ] Group start/complete events logged
+- [ ] Falls back to sequential on low confidence
+- [ ] `--dry-run --parallel` shows partition plan
+
+### Enhanced Subtask Tests
+
+- [ ] Checkpoint mode: single agent handles all subtasks
+- [ ] `<subtask-complete>` signal detected and validated
+- [ ] Subtask progress tracked in session
+- [ ] Independent subtask (`independent: true`) gets own verification loop
+- [ ] `<promote-subtask>` signal creates new task
+- [ ] Promoted task placed after parent in priority
+- [ ] Original subtask marked with `promotedTo`
+- [ ] Parent task completes when all subtasks pass
+
 ## Web UI Tests
 
 ### Starting the Server

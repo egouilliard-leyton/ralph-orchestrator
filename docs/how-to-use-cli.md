@@ -197,6 +197,27 @@ Execute the verified task loop.
   ralph run --gates build
   ```
 
+**Parallel Execution:**
+
+Run multiple tasks concurrently when they don't have file conflicts:
+
+- Enable parallel mode:
+  ```bash
+  ralph run --parallel
+  ```
+- Limit concurrent groups (default: 3):
+  ```bash
+  ralph run --parallel --max-parallel 5
+  ```
+
+When parallel mode is enabled, Ralph:
+1. Analyzes tasks to estimate which files they'll modify
+2. Partitions tasks into non-overlapping groups
+3. Runs groups concurrently using ThreadPoolExecutor
+4. Falls back to sequential if file analysis confidence is low
+
+Tasks with overlapping file sets run in separate groups to avoid conflicts.
+
 **UI Test Control:**
 
 Control which UI tests run during post-completion verification:

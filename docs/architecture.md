@@ -437,6 +437,84 @@ const { branches, createBranch, createPR, status } = useGit(projectId);
 - **Coverage:** Full user workflows
 - **Tools:** Playwright
 
+## Parallel Execution
+
+Ralph supports parallel task execution with file-set pre-allocation to avoid conflicts.
+
+### File-Set Pre-Allocation
+
+The `TaskFileAnalyzer` estimates which files each task will modify by:
+- Extracting explicit file paths from task descriptions
+- Matching keywords to file patterns (api, frontend, tests, etc.)
+- Searching the codebase for matching files
+
+### Task Partitioning
+
+`TaskPartitioner` groups tasks using a greedy algorithm:
+1. Sort tasks by estimated file count (largest first)
+2. Assign each task to first group with no file overlap
+3. Create new group if no suitable group exists
+4. If at max groups, assign to smallest group
+
+### Parallel Execution Flow
+
+```
+1. User runs `ralph run --parallel`
+   │
+2. TaskFileAnalyzer estimates files for each task
+   │
+3. TaskPartitioner groups tasks by file overlap
+   │
+4. OrchestrationService emits PARALLEL_STARTED
+   │
+5. Each group runs concurrently via ThreadPoolExecutor
+   │
+6. GROUP_STARTED/GROUP_COMPLETED events per group
+   │
+7. PARALLEL_COMPLETED when all groups finish
+```
+
+### Parallel Event Types
+
+```python
+class EventType(Enum):
+    # ... existing events ...
+    PARALLEL_STARTED = "parallel_started"
+    PARALLEL_COMPLETED = "parallel_completed"
+    GROUP_STARTED = "group_started"
+    GROUP_COMPLETED = "group_completed"
+```
+
+## Enhanced Subtasks
+
+Subtasks support two execution modes and can be promoted to full tasks.
+
+### Subtask Modes
+
+- **Checkpoint Mode (default):** Single agent handles all subtasks, emitting `<subtask-complete>` signals for progress tracking.
+- **Independent Mode:** Set `independent: true` to give subtask its own verification loop.
+
+### Subtask Signals
+
+```xml
+<subtask-complete id="T-001.2" session="TOKEN">
+Summary of work completed for this subtask.
+</subtask-complete>
+
+<promote-subtask id="T-001.3" session="TOKEN">
+Reason why this subtask needs to become a full task.
+</promote-subtask>
+```
+
+### Subtask Event Types
+
+```python
+class EventType(Enum):
+    # ... existing events ...
+    SUBTASK_COMPLETE = "subtask_complete"
+    SUBTASK_PROMOTED = "subtask_promoted"
+```
+
 ## Security Considerations
 
 1. **Session Tokens** - All completion signals must include valid session token

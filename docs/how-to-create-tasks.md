@@ -143,6 +143,28 @@ If a task has multiple distinct steps, use subtasks:
 
 Parent task passes only when all subtasks pass.
 
+**Subtask Modes:**
+
+Subtasks can operate in two modes:
+
+- **Checkpoint Mode (default):** A single agent handles all subtasks, signaling progress with `<subtask-complete>` after each one. The parent task completes when all subtasks pass.
+
+- **Independent Mode:** Each subtask gets its own implementation → gates → review loop. Set `"independent": true` in the subtask definition. Useful for complex subtasks that need separate verification.
+
+```json
+{
+  "id": "T-003.1",
+  "title": "Add login endpoint",
+  "acceptanceCriteria": ["POST /login returns JWT"],
+  "independent": true,
+  "description": "Create the login endpoint with JWT token generation"
+}
+```
+
+**Subtask Promotion:**
+
+If an agent determines a subtask is too complex to complete inline, it can promote the subtask to a full task by emitting a `<promote-subtask>` signal. The promoted subtask becomes a new task with priority immediately after the parent task, and the original subtask is marked with a `promotedTo` field pointing to the new task ID.
+
 ### 10. Validate Your Task List
 
 Save the file and validate it against the schema:

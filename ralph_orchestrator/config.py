@@ -146,7 +146,7 @@ class GitConfig:
     remote: str = "origin"
 
 
-@dataclass  
+@dataclass
 class AutopilotConfig:
     """Autopilot pipeline configuration."""
     enabled: bool = False
@@ -163,6 +163,8 @@ class AutopilotConfig:
     recent_days: int = 7
     progress_path: str = ".ralph/progress.txt"
     archive_path: str = ".ralph/archive"
+    schedule: Optional[str] = None  # Schedule keyword: hourly, daily, weekly, weekdays, twice-daily
+    schedule_time: str = "02:00"  # Time of day for scheduled runs (24h format)
 
 
 @dataclass
@@ -351,7 +353,7 @@ def _parse_autopilot(autopilot_data: Dict[str, Any]) -> AutopilotConfig:
     prd = autopilot_data.get("prd", {})
     tasks = autopilot_data.get("tasks", {})
     memory = autopilot_data.get("memory", {})
-    
+
     return AutopilotConfig(
         enabled=autopilot_data.get("enabled", False),
         reports_dir=autopilot_data.get("reports_dir", "./reports"),
@@ -367,6 +369,8 @@ def _parse_autopilot(autopilot_data: Dict[str, Any]) -> AutopilotConfig:
         recent_days=analysis.get("recent_days", 7),
         progress_path=memory.get("progress", ".ralph/progress.txt"),
         archive_path=memory.get("archive", ".ralph/archive"),
+        schedule=autopilot_data.get("schedule"),
+        schedule_time=autopilot_data.get("schedule_time", "02:00"),
     )
 
 

@@ -433,6 +433,17 @@ cat ~/ralph-autopilot.log
 3. Break the task into smaller subtasks
 4. Increase `limits.max_iterations` in config (use sparingly)
 
+### 24. Parallel Execution Issues
+
+**Cause:** Tasks fail when running with `--parallel`
+
+**Solution:**
+1. Check for file conflicts - tasks modifying the same files should run sequentially
+2. Run with lower parallelism: `ralph run --parallel --max-parallel 2`
+3. Review group logs in `.ralph-session/logs/` for each group
+4. If file analysis confidence is low, Ralph falls back to sequential mode automatically
+5. Use `ralph run` (without `--parallel`) as a fallback
+
 ## Debugging Techniques
 
 ### 24. Enable Verbose Mode

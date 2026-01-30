@@ -190,6 +190,17 @@ ralph flow new --force
 ralph flow change --out-md changes/my-feature.md --out-json .ralph/my-feature.json
 ```
 
+### Run Tasks in Parallel
+
+Enable parallel execution for non-overlapping tasks:
+
+```bash
+ralph flow change --parallel
+ralph flow change --parallel --max-parallel 5
+```
+
+Parallel mode analyzes tasks to estimate file dependencies and runs non-overlapping tasks concurrently.
+
 ## Troubleshooting
 
 ### Chat exits without writing file
