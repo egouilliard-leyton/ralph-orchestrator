@@ -43,6 +43,25 @@ ralph autopilot --no-research                # Skip research phase
 ralph autopilot --research-backend           # Backend research only
 ralph autopilot --research-frontend          # Frontend research only
 ralph autopilot --research-web               # Web search research only
+
+# Web UI server
+ralph serve                                  # Start web UI at http://localhost:8765
+ralph serve --port 9000                      # Custom port
+
+# Scheduling (system service for periodic autopilot)
+ralph schedule install                       # Install launchd/systemd service
+ralph schedule uninstall                     # Remove scheduled service
+ralph schedule status                        # Check service status
+ralph schedule run                           # Manual trigger of scheduled run
+
+# Conversational workflows
+ralph chat                                   # Interactive chat, saves to markdown
+ralph tasks <markdown-file>                  # Generate prd.json from markdown
+ralph validate-tasks                         # Validate prd.json against schema
+
+# One-command flows
+ralph flow change "<description>"            # Full flow: chat→tasks→validate→run
+ralph flow new "<description>"               # New feature flow with scaffolding
 ```
 
 ## Architecture
@@ -90,6 +109,14 @@ Each agent must include the session token in their completion signal for anti-ga
 - **`skills/`** - Skill routing for specialized Claude plugins
   - `router.py` - `SkillRouter` detects and applies skills for tasks
   - `defaults.py` - Default skill mappings (frontend-design, docx, xlsx, etc.)
+- **`parallel.py`** - Task parallelization with file-set pre-allocation
+- **`schedule.py`** - System service scheduling (launchd on macOS, systemd on Linux)
+- **`browser_use.py`** - Browser automation for UI testing
+- **`service_lifecycle.py`** - Manages dev server processes during task execution
+- **`server/`** - Web UI backend
+  - `api.py` - FastAPI REST endpoints for dashboard
+  - `websocket.py` - Real-time updates via WebSocket
+  - `events.py` - Event broadcasting for UI state sync
 
 ### Configuration
 
