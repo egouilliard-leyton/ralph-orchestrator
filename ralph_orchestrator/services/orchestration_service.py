@@ -598,6 +598,7 @@ class OrchestrationService:
             AgentRole,
             build_implementation_prompt,
             get_allowed_tools_for_role,
+            TaskSummary,
         )
         from ..signals import (
             validate_implementation_signal,
@@ -634,6 +635,17 @@ class OrchestrationService:
         if skill:
             self.exec_log.custom(f"[SKILL] Using /{skill.skill_name} for task {task.id} ({skill.reason})")
 
+        # Build all tasks summary for project context
+        all_tasks = [
+            TaskSummary(
+                task_id=t.id,
+                title=t.title,
+                description=t.description,
+                status="completed" if t.passes else ("current" if t.id == task.id else "pending"),
+            )
+            for t in self.prd.tasks
+        ]
+
         context = self._create_task_context(task, previous_feedback=feedback)
         base_prompt = build_implementation_prompt(
             task=context,
@@ -641,6 +653,7 @@ class OrchestrationService:
             project_description=self.prd.description,
             agents_md_content=self.agents_md_content,
             report_path=report_path,
+            all_tasks=all_tasks,
         )
 
         # Add skill prefix if detected
