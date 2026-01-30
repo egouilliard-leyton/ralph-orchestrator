@@ -33,6 +33,10 @@ ralph run --no-smoke --prd-json .ralph/prd.json     # Disable smoke tests
 ralph run --with-robot --prd-json .ralph/prd.json   # Enable Robot Framework
 ralph run --no-robot --prd-json .ralph/prd.json     # Disable Robot Framework
 
+# Parallel task execution
+ralph run --parallel --prd-json .ralph/prd.json     # Run tasks in parallel
+ralph run --parallel --max-parallel 5               # Max 5 concurrent groups (default: 3)
+
 # Autopilot with research control
 ralph autopilot --with-research --dry-run    # Enable research phase (default)
 ralph autopilot --no-research                # Skip research phase
@@ -53,6 +57,17 @@ The verified task loop in `run.py` executes tasks through multiple agent phases:
 4. **Review Agent** - Verifies acceptance criteria, emits `<review-approved>` or `<review-rejected>`
 
 Each agent must include the session token in their completion signal for anti-gaming verification.
+
+**Parallel Execution Mode** (`--parallel`):
+- Analyzes tasks to estimate which files they'll modify
+- Partitions tasks into non-overlapping groups using file-set pre-allocation
+- Runs groups concurrently with ThreadPoolExecutor
+- Falls back to sequential if analysis confidence is low
+
+**Enhanced Subtasks**:
+- **Checkpoint mode** (default): Single agent handles all subtasks, signals progress with `<subtask-complete>`
+- **Independent mode** (`independent: true`): Subtask gets its own verification loop
+- **Promotion**: Agent can escalate complex subtasks to full tasks via `<promote-subtask>`
 
 ### Key Modules
 

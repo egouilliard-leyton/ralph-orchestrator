@@ -41,6 +41,8 @@ Step-by-step guides for common tasks:
 
 | Feature | Description |
 |---------|-------------|
+| Parallel Execution | Run tasks concurrently with `--parallel` flag; uses file-set pre-allocation to avoid conflicts |
+| Enhanced Subtasks | Checkpoint mode for progress tracking, independent mode for separate verification loops |
 | Research Sub-agents | Backend, frontend, and web researchers gather context before PRD generation |
 | Skill Routing | Specialized Claude plugins auto-applied based on task content |
 | UI Test Flags | Control smoke tests and Robot Framework with `--with-smoke`, `--no-smoke`, `--with-robot`, `--no-robot` |

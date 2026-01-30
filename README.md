@@ -11,6 +11,8 @@ Ralph Orchestrator (`ralph`) automates the software development lifecycle by coo
 - **Verified Task Loop** - Each task passes through implementation, test-writing, quality gates, and review phases
 - **Anti-Gaming Protection** - Session tokens and checksum verification prevent agents from bypassing quality checks
 - **Quality Gates** - Configurable build, lint, and test commands that must pass before task completion
+- **Parallel Task Execution** - Run independent tasks concurrently with `--parallel` flag using file-set pre-allocation
+- **Enhanced Subtasks** - Checkpoint mode for progress tracking, independent mode for separate verification loops
 - **Autopilot Mode** - Fully autonomous pipeline: analyze reports, research codebase, generate PRDs, create tasks, execute, and open PRs
 - **Research Sub-agents** - Backend, frontend, and web researchers gather context before PRD generation
 - **Guardrails** - Test-writing agents are restricted to test directories only
@@ -60,6 +62,8 @@ ralph scan                    # Verify environment and tools
 ```bash
 ralph run --dry-run           # Preview tasks without execution
 ralph run                     # Execute verified task loop
+ralph run --parallel          # Run tasks in parallel when possible
+ralph run --parallel --max-parallel 5   # Limit to 5 concurrent groups
 ```
 
 ### One-Command Flows
