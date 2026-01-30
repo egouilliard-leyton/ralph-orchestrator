@@ -41,6 +41,15 @@ class SubtaskContext:
 
 
 @dataclass
+class TaskSummary:
+    """Summary of a task for project context (not the current task being executed)."""
+    task_id: str
+    title: str
+    description: str
+    status: str  # "completed", "current", "pending"
+
+
+@dataclass
 class TaskContext:
     """Context for a task being executed."""
     task_id: str
@@ -114,12 +123,70 @@ You can complete multiple subtasks and signal each one, then signal task-done at
     return "\n".join(lines)
 
 
+def _build_project_roadmap_section(
+    all_tasks: Optional[List[TaskSummary]],
+    current_task_id: str,
+) -> str:
+    """Build the project roadmap section showing all tasks for context.
+
+    Args:
+        all_tasks: List of all tasks in the project with their status.
+        current_task_id: The ID of the current task being implemented.
+
+    Returns:
+        Formatted project roadmap section string.
+    """
+    if not all_tasks:
+        return ""
+
+    lines = [
+        "## Project Roadmap (Context Only)",
+        "",
+        "**IMPORTANT: This section is for context only. DO NOT implement any task other than your assigned task.**",
+        "**Your ONLY task is marked with ➤ below. All other tasks are handled by separate agents.**",
+        "",
+        "This is the full list of tasks in this project to help you understand the overall goal and architecture:",
+        "",
+    ]
+
+    completed = [t for t in all_tasks if t.status == "completed"]
+    current = [t for t in all_tasks if t.status == "current"]
+    pending = [t for t in all_tasks if t.status == "pending"]
+
+    if completed:
+        lines.append("### Completed Tasks")
+        for t in completed:
+            lines.append(f"- [x] **{t.task_id}**: {t.title}")
+        lines.append("")
+
+    if current:
+        lines.append("### Current Task (Your Assignment)")
+        for t in current:
+            lines.append(f"- ➤ **{t.task_id}**: {t.title} ← **YOU ARE IMPLEMENTING THIS**")
+        lines.append("")
+
+    if pending:
+        lines.append("### Pending Tasks (DO NOT IMPLEMENT)")
+        for t in pending:
+            lines.append(f"- [ ] **{t.task_id}**: {t.title}")
+        lines.append("")
+
+    lines.extend([
+        "---",
+        f"**Remember: Focus ONLY on {current_task_id}. Do not work on any other tasks.**",
+        "",
+    ])
+
+    return "\n".join(lines)
+
+
 def build_implementation_prompt(
     task: TaskContext,
     session_token: str,
     project_description: str = "",
     agents_md_content: str = "",
     report_path: Optional[str] = None,
+    all_tasks: Optional[List[TaskSummary]] = None,
 ) -> str:
     """Build prompt for implementation agent.
 
@@ -129,6 +196,7 @@ def build_implementation_prompt(
         project_description: Project description from prd.json.
         agents_md_content: Content of AGENTS.md for context.
         report_path: Path to write agent report (append-only).
+        all_tasks: Optional list of all tasks for project context.
 
     Returns:
         Complete prompt string.
@@ -200,13 +268,18 @@ Format:
     if task.subtasks:
         subtask_section = _build_subtask_section(task.subtasks, session_token)
 
+    # Build project roadmap section if all tasks provided
+    roadmap_section = ""
+    if all_tasks:
+        roadmap_section = _build_project_roadmap_section(all_tasks, task.task_id)
+
     return f"""# Implementation Task
 
 You are implementing a task for a software project.
 
 ## Project
 {project_description}
-
+{roadmap_section}
 ## Task: {task.task_id} - {task.title}
 
 {task.description}
@@ -219,9 +292,10 @@ You are implementing a task for a software project.
 {feedback_section}{report_section}
 ## Instructions
 
-1. Implement the required changes to satisfy all acceptance criteria
-2. Follow project conventions and best practices
-3. When complete, output the completion signal
+1. Implement ONLY the task assigned to you ({task.task_id})
+2. DO NOT implement any other tasks from the project roadmap
+3. Follow project conventions and best practices
+4. When complete, output the completion signal
 
 ## Completion Signal
 
