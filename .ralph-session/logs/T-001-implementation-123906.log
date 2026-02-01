@@ -1,0 +1,153 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-001 - Audit existing architecture and identify refactoring boundaries
+
+Analyze current codebase structure (cli.py, run.py, session.py, gates.py, agents/) to identify which logic must be extracted into services layer. Document current dependencies, coupling points, and event emission points needed for real-time updates. Map out how to preserve CLI functionality while making core logic reusable.
+
+## Acceptance Criteria
+
+- Complete dependency map created showing all modules and their interactions
+- List of logic to extract from cli.py, run.py into services layer documented
+- Event emission points identified for WebSocket broadcasting (task start/stop, agent transitions, gate execution, signal detection)
+- CLI preservation strategy documented (keep commands as thin wrappers)
+- No breaking changes identified for existing CLI commands
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-001/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-123906-2ef9bbe2f36dd441">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-123906-2ef9bbe2f36dd441
+'
+# Started: 2026-01-27T12:39:06.665687Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+All tasks are complete. Let me provide the completion signal.
+
+---
+
+## Summary
+
+I have completed the architecture audit for T-001. The comprehensive analysis is documented in the existing `docs/architecture-audit-T001.md` (636 lines), which I verified against the current codebase.
+
+### Key Deliverables
+
+1. **Complete Dependency Map** - 15+ modules analyzed with coupling scores and import relationships (Section 1)
+
+2. **Logic Extraction List** - Identified functions/classes to extract:
+   - From `cli.py`: 6 functions (task generation, complexity analysis, structured Claude invocation)
+   - From `run.py`: 8 methods (RunEngine, agent phases, gate execution)
+   - From `autopilot.py`: 4 classes (ReportDiscovery, ReportAnalyzer, BranchManager, plus phase methods)
+
+3. **Event Emission Points** - 23 events identified for WebSocket broadcasting:
+   - Task lifecycle (3): started, completed, failed
+   - Agent phases (4): started, output, completed, signal_detected
+   - Gate execution (5): started, output, completed, all_passed, failed
+   - Session (3): created, task_updated, checkpoint
+   - Autopilot (5): phase_started, phase_completed, report_selected, analysis_complete, pr_created
+
+4. **CLI Preservation Strategy** - Thin wrapper pattern documented with OutputHandler protocol
+
+5. **No Breaking Changes** - All CLI commands, arguments, exit codes, and file formats verified unchanged
+
+<task-done session="ralph-20260127-123906-2ef9bbe2f36dd441">
+Implementation complete. Changes:
+- Verified existing comprehensive architecture audit at docs/architecture-audit-T001.md (636 lines)
+- Analyzed all 15+ core modules and mapped dependencies
+- Identified 23 event emission points for WebSocket broadcasting
+- Documented CLI thin wrapper preservation strategy
+- Confirmed no breaking changes to existing CLI commands
+- Updated implementation report at .ralph-session/reports/T-001/implementation.md
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T12:43:16.355384Z
+# Duration: 249689ms
+# Exit code: 0

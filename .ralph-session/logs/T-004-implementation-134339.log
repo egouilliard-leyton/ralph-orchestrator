@@ -1,0 +1,131 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-004 - Create config and git services
+
+Create config_service.py to handle ralph.yml CRUD operations (enhanced from config.py) with validation. Create git_service.py to handle git operations (branch creation, switching, PR creation via GitHub/GitLab API). Both services emit events and are CLI-agnostic.
+
+## Acceptance Criteria
+
+- config_service.py created with ConfigService class
+- ConfigService provides get/update operations for ralph.yml
+- ConfigService validates against JSON schema before saving
+- ConfigService emits events on config changes
+- git_service.py created with GitService class
+- GitService supports branch operations (list, create, switch, delete)
+- GitService supports PR creation with template-based descriptions
+- GitService handles git credentials securely
+- Both services have unit tests with mocked filesystem/git operations
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-004/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T13:43:39.113098Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+All imports work correctly. The implementation is complete.
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Created `ralph_orchestrator/services/config_service.py` with ConfigService class providing CRUD operations for ralph.yml, validation against JSON schema, and event emission on config changes
+- Created `ralph_orchestrator/services/git_service.py` with GitService class supporting branch operations (list, create, switch, delete), PR creation with template-based descriptions via gh/glab CLI, and secure credential handling
+- Updated `ralph_orchestrator/services/__init__.py` to export both new services and their types
+- Created `tests/unit/test_config_service.py` with 49 comprehensive unit tests
+- Created `tests/unit/test_git_service.py` with 52 unit tests using mocked filesystem/git operations
+- All 101 tests pass
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T13:52:25.071838Z
+# Duration: 525958ms
+# Exit code: 0

@@ -1,0 +1,152 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-sonnet-4-5-20250929 --allowedTools Read,Grep,Glob,Edit,Write,LS -p '# Test-Writing Task (GUARDRAILED)
+
+You are writing tests for implemented features.
+
+## CRITICAL FILE RESTRICTIONS
+
+You may ONLY create/modify files matching these patterns:
+- tests/**
+- test_scripts/**
+- **/test_*.py
+- **/*_test.py
+
+**ALLOWED:**
+- Python test files (e.g., `tests/**/test_*.py`, `tests/**/*_test.py`)
+- Test fixture files, conftest.py
+
+**FORBIDDEN (will be reverted):**
+- ANY markdown files (*.md) in tests/ - DO NOT create documentation in tests/
+- ANY source files outside test directories
+- Test result documents or reports in tests/
+
+Any modifications to forbidden paths will be **automatically reverted**.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-013 - Build git integration UI and log viewer
+
+Create GitPanel component showing current branch, list of all branches with status (commits ahead/behind, last commit). Add actions for branch creation, switching, deletion, and PR creation. Create LogViewer component for real-time log streaming with search, filters, and ANSI color support. Both connect to respective API endpoints and WebSocket for live updates.
+
+## Acceptance Criteria
+
+- src/components/GitPanel.tsx displays current branch prominently
+- Branch list shows: name, commits ahead/behind remote, last commit message, timestamp
+- Create Branch button with name template input
+- Switch Branch dropdown/action
+- Delete Branch action with confirmation
+- Create PR button opens modal: title (auto-generated), description (from acceptance criteria), one-click creation via POST /api/projects/{id}/pr
+- PR creation success shows link to GitHub/GitLab PR
+- src/components/LogViewer.tsx streams logs in real-time via WebSocket
+- Filters: by agent type, by gate, by log level, by time range
+- Search functionality highlights matches
+- ANSI color codes rendered correctly
+- Auto-scroll toggle
+- Download logs button exports as text file
+
+## TEST QUALITY RULES
+
+You MUST follow these rules to avoid writing broken tests:
+
+1. **Only assert on REAL public APIs**: Do not invent or assume attributes, methods, or behaviors that don'"'"'t exist. Read the actual source code to verify what the API provides before writing assertions.
+
+2. **Prefer black-box assertions**: Test observable behavior rather than internal implementation:
+   - CLI output and exit codes
+   - File existence and content
+   - Schema/structure validity
+   - HTTP responses
+   - Log output
+   Avoid testing private attributes or internal state unless explicitly required.
+
+3. **Keep scope tight**: Only write tests that verify the task'"'"'s acceptance criteria. Do not add speculative tests for features not mentioned in the criteria.
+
+4. **Verify imports work**: Before using any import in a test, confirm the module and symbol exist in the codebase.
+
+5. **No documentation in tests/**: Do not create `.md` files, test reports, or narrative documents in `tests/`. Write only executable test code.
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-013/test-writing.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Test Writing - [timestamp]
+- Tests created/modified
+- Coverage notes
+- Issues encountered (if any)
+```
+
+## Instructions
+
+1. Read the implementation to understand what APIs and behaviors actually exist
+2. Write focused tests that validate each acceptance criterion
+3. Cover happy path and realistic edge cases
+4. Only create/modify files in test directories (no .md files!)
+5. Follow project testing conventions
+
+## Completion Signal
+
+When you have completed writing tests, output:
+
+```
+<tests-done session="ralph-20260127-130602-fad836b2249411c5">
+Tests written:
+- [list of test files/functions]
+</tests-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T16:32:09.769357Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+Perfect! Now let me output the completion signal:
+
+```
+<tests-done session="ralph-20260127-130602-fad836b2249411c5">
+Tests written:
+- tests/unit/test_git_panel_ui.py (32 tests)
+  - GitPanel display logic (current branch, dirty state, branch list, ahead/behind indicators)
+  - Branch actions (create, switch, delete with confirmation)
+  - PR creation button and handler
+  - Loading states (creating, deleting, switching, refreshing)
+  - Branch filtering (local only, exclude remotes)
+  - Commit display (short SHA, message truncation)
+  - Edge cases (empty lists, null values, branches without tracking)
+
+- tests/unit/test_log_viewer_ui.py (60 tests)
+  - Log entry display (timestamp, level, source, message)
+  - ANSI color code rendering (foreground, background, bold, underline, reset)
+  - Search functionality (filtering, highlighting, case-insensitive)
+  - Multi-level filtering (by level, source, combined with search)
+  - Log level badge variants (debug, info, warn, error)
+  - Source color coding (implementation, test, review, fix, gate, system)
+  - Auto-scroll behavior (toggle, disable on manual scroll)
+  - Download and load more functionality
+  - Filter panel (toggle, level options, source options)
+  - Edge cases (long messages, newlines, empty messages, null timestamps)
+
+- tests/integration/test_git_integration.py (31 tests)
+  - Branch operations (list, create, switch, delete, force delete)
+  - Git status operations (clean, dirty, untracked, modified, staged files)
+  - Remote operations (URL detection, GitHub/GitLab forge detection)
+  - Commit operations (commit with staging, commit with add_all)
+  - Event emission (branch created, switched, deleted events)
+  - Error handling (GitError with exit codes and messages)
+  - BranchInfo data structure (all fields, serialization)
+  - CLI availability detection (gh, glab)
+
+Total: 123 tests covering all acceptance criteria
+- GitPanel: branch display, status indicators, create/switch/delete actions, PR creation
+- LogViewer: log display, ANSI rendering, search with highlighting, filters, auto-scroll, download
+- Git service: full integration with git CLI, event system, error handling
+
+Report written to: .ralph-session/reports/T-013/test-writing.md
+</tests-done>
+```
+------------------------------------------------------------
+# Ended: 2026-01-27T16:37:06.690241Z
+# Duration: 296920ms
+# Exit code: 0

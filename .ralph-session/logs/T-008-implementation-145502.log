@@ -1,0 +1,154 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-008 - Add '"'"'ralph serve'"'"' CLI command
+
+Add '"'"'serve'"'"' subcommand to cli.py that starts the FastAPI server with uvicorn. Support options for port, host, projects-root, auto-open browser, and remote access. Command should initialize services, start project discovery, and launch web server. Update CLI to refactor existing commands to use services layer.
+
+## Acceptance Criteria
+
+- cli.py updated with '"'"'serve'"'"' subcommand using Click
+- Options: --port (default 3000), --host (default 127.0.0.1), --projects-root (default current dir), --open (auto-open browser), --remote (bind to 0.0.0.0)
+- Warning displayed when --remote flag enables remote connections
+- Command initializes ProjectService with projects-root
+- Command starts uvicorn server with FastAPI app
+- Browser auto-opens to http://localhost:{port} if --open flag set
+- Server logs display startup message with URL
+- Existing CLI commands (run, scan, init, verify) refactored to call services layer
+- All existing CLI integration tests pass unchanged
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Previous Feedback
+
+The previous attempt had issues that need to be addressed:
+
+Gates failed:
+Gate '"'"'mypy'"'"' failed (exit code 1)
+  Full output saved to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/logs/gate-mypy.log
+  (Read this file for complete error details)
+  Output (preview):
+ralph_orchestrator/services/session_service.py:318: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/session_service.py:321: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/session_service.py:324: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/config_service.py:244: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/config_service.py:247: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/config_service.py:250: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/config_service.py:253: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+server/events.py:497: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+server/events.py:502: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+server/events.py:505: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+server/websocket.py:237: error: Argument 1 to "subscribe_all" of "EventEmitter" has incompatible type "Callable[[Event], Task[None]]"; expected "Callable[[Event], None]"  [arg-type]
+server/api.py:1094: error: Need type annotation for "events" (hint: "events: list[<type>] = ...")  [var-annotated]
+
+
+Please address these issues in this iteration.
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-008/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T14:55:02.210433Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+All mypy type errors have been fixed and the implementation report has been updated.
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Fixed server/websocket.py:237 type error by replacing lambda with named function to ensure proper return type for subscribe_all callback
+- Fixed server/api.py:1094 by adding explicit type annotation `List[TimelineEvent]` for the events variable
+- All 32 source files now pass mypy with no errors
+- All serve command tests continue to pass
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T14:57:10.853080Z
+# Duration: 128642ms
+# Exit code: 0

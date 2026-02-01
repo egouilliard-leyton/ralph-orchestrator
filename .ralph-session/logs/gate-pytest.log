@@ -1,0 +1,102 @@
+# Command: uv run pytest -x --tb=short -q
+# Started: 2026-01-28T09:18:48.991784Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 300s
+------------------------------------------------------------
+# STDOUT:
+============================= test session starts ==============================
+platform darwin -- Python 3.13.1, pytest-8.4.2, pluggy-1.5.0
+rootdir: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-6.0.0, asyncio-1.2.0, mockito-0.0.4, anyio-4.10.0, mock-3.14.0, logfire-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1495 items
+
+tests/e2e/test_full_workflow_e2e.py sssssssss                            [  0%]
+tests/integration/test_api_integration.py .................              [  1%]
+tests/integration/test_architecture_refactoring.py ..................... [  3%]
+                                                                         [  3%]
+tests/integration/test_autopilot.py .............................        [  5%]
+tests/integration/test_dashboard_ui.py ................................. [  7%]
+..............                                                           [  8%]
+tests/integration/test_fix_loops.py .......................              [  9%]
+tests/integration/test_frontend_initialization.py ...................... [ 11%]
+.....                                                                    [ 11%]
+tests/integration/test_gates.py ................                         [ 12%]
+tests/integration/test_git_integration.py .............................. [ 14%]
+...                                                                      [ 14%]
+tests/integration/test_git_log_websocket.py ...........................  [ 16%]
+tests/integration/test_git_panel_api.py ....................             [ 17%]
+tests/integration/test_git_panel_ui.py .....................             [ 19%]
+tests/integration/test_guardrails.py ........................            [ 21%]
+tests/integration/test_invalid_signals.py ............                   [ 21%]
+tests/integration/test_log_viewer_api.py ...........................     [ 23%]
+tests/integration/test_log_viewer_ui.py ..............................   [ 25%]
+tests/integration/test_mock_integration.py ............s.                [ 26%]
+tests/integration/test_orchestration_cli_integration.py s.ss..s..        [ 27%]
+tests/integration/test_realtime_integration.py ......................... [ 28%]
+...                                                                      [ 29%]
+tests/integration/test_serve_cli_integration.py .......                  [ 29%]
+tests/integration/test_services.py ....................                  [ 30%]
+tests/integration/test_tampering.py ............                         [ 31%]
+tests/integration/test_task_board_ui.py ................................ [ 33%]
+.................................                                        [ 35%]
+tests/integration/test_task_loop.py ...........                          [ 36%]
+tests/integration/test_websocket_integration.py ................         [ 37%]
+tests/integration/test_workflow_config_ui.py ..................          [ 38%]
+tests/services/test_config_service.py .......                            [ 39%]
+tests/services/test_git_service.py .........                             [ 40%]
+tests/services/test_orchestration_service.py ..........                  [ 40%]
+tests/services/test_project_service.py .........                         [ 41%]
+tests/services/test_session_service.py .....                             [ 41%]
+tests/unit/test_api.py ................................................. [ 44%]
+........                                                                 [ 45%]
+tests/unit/test_architecture_audit.py .................................. [ 47%]
+........                                                                 [ 48%]
+tests/unit/test_config_service.py ...................................... [ 50%]
+...........                                                              [ 51%]
+tests/unit/test_core_modules.py ........................................ [ 54%]
+....                                                                     [ 54%]
+tests/unit/test_create_pr_modal.py ..................................... [ 56%]
+........                                                                 [ 57%]
+tests/unit/test_events.py .............................................. [ 60%]
+.............                                                            [ 61%]
+tests/unit/test_fixtures.py ................                             [ 62%]
+tests/unit/test_flow.py ...................................              [ 64%]
+tests/unit/test_gates.py .............                                   [ 65%]
+tests/unit/test_git_panel_ui.py ...............................          [ 67%]
+tests/unit/test_git_service.py ......................................... [ 70%]
+...........                                                              [ 71%]
+tests/unit/test_guardrails.py .......................                    [ 72%]
+tests/unit/test_log_viewer_ui.py ....................................... [ 75%]
+.....................                                                    [ 76%]
+tests/unit/test_mock_claude.py ......................                    [ 78%]
+tests/unit/test_orchestration_events.py ssssss...                        [ 78%]
+tests/unit/test_orchestration_service.py ............................... [ 81%]
+.                                                                        [ 81%]
+tests/unit/test_project_service.py ..................................... [ 83%]
+........                                                                 [ 84%]
+tests/unit/test_run_engine.py .............                              [ 84%]
+tests/unit/test_serve_command.py ....................                    [ 86%]
+tests/unit/test_session_service.py ..................................... [ 88%]
+...................                                                      [ 90%]
+tests/unit/test_signals.py ........................                      [ 91%]
+tests/unit/test_ui_testing.py .......................................... [ 94%]
+.................................                                        [ 96%]
+tests/unit/test_websocket.py ........................................... [ 99%]
+.......                                                                  [100%]
+
+=============================== warnings summary ===============================
+tests/unit/test_git_panel_ui.py::TestGitPanelBranchActions::test_refresh_button_calls_handler
+  /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/tests/unit/test_git_panel_ui.py:214: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    mock_handler()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================= 1475 passed, 20 skipped, 1 warning in 16.92s =================
+------------------------------------------------------------
+# Ended: 2026-01-28T09:19:06.694949Z
+# Duration: 17703ms
+# Exit code: 0

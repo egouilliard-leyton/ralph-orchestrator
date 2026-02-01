@@ -1,0 +1,138 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-013 - Build git integration UI and log viewer
+
+Create GitPanel component showing current branch, list of all branches with status (commits ahead/behind, last commit). Add actions for branch creation, switching, deletion, and PR creation. Create LogViewer component for real-time log streaming with search, filters, and ANSI color support. Both connect to respective API endpoints and WebSocket for live updates.
+
+## Acceptance Criteria
+
+- src/components/GitPanel.tsx displays current branch prominently
+- Branch list shows: name, commits ahead/behind remote, last commit message, timestamp
+- Create Branch button with name template input
+- Switch Branch dropdown/action
+- Delete Branch action with confirmation
+- Create PR button opens modal: title (auto-generated), description (from acceptance criteria), one-click creation via POST /api/projects/{id}/pr
+- PR creation success shows link to GitHub/GitLab PR
+- src/components/LogViewer.tsx streams logs in real-time via WebSocket
+- Filters: by agent type, by gate, by log level, by time range
+- Search functionality highlights matches
+- ANSI color codes rendered correctly
+- Auto-scroll toggle
+- Download logs button exports as text file
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-013/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T16:25:43.382017Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+Implementation is complete. Let me provide the summary.
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Added git types (Branch, GitStatus, CreateBranchRequest, CreatePRRequest, PRResult) and log types (LogLevel, LogSource, LogEntry, LogFilter, LogsResponse) to frontend/src/services/api.ts
+- Added API endpoints for git operations (getStatus, getBranches, createBranch, switchBranch, deleteBranch, createPR) and logs (list, download)
+- Created frontend/src/components/git/git-panel.tsx with current branch display, branch list with ahead/behind indicators, create/switch/delete branch actions
+- Created frontend/src/components/git/create-pr-modal.tsx with auto-generated title, acceptance criteria description, and PR result with GitHub link
+- Created frontend/src/components/git/index.ts for barrel exports
+- Created frontend/src/components/logs/log-viewer.tsx with real-time WebSocket streaming, ANSI color support, search with highlighting, level/source filters, auto-scroll toggle, and download button
+- Created frontend/src/components/logs/index.ts for barrel exports
+- Created frontend/src/hooks/use-git.ts for git state management with WebSocket real-time updates
+- Created frontend/src/hooks/use-logs.ts for log state management with filtering, pagination, and streaming
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T16:32:09.725594Z
+# Duration: 386343ms
+# Exit code: 0

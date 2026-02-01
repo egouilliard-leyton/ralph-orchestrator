@@ -2,56 +2,10 @@
  * REST API client for Ralph Orchestrator backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { httpClient, HttpError, getAppError } from "./http-client";
 
-interface RequestOptions extends RequestInit {
-  params?: Record<string, string>;
-}
-
-class ApiError extends Error {
-  constructor(
-    public status: number,
-    public statusText: string,
-    message: string
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
-
-async function request<T>(
-  endpoint: string,
-  options: RequestOptions = {}
-): Promise<T> {
-  const { params, ...fetchOptions } = options;
-
-  let url = `${API_BASE_URL}${endpoint}`;
-  if (params) {
-    const searchParams = new URLSearchParams(params);
-    url += `?${searchParams.toString()}`;
-  }
-
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers: {
-      "Content-Type": "application/json",
-      ...fetchOptions.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const errorMessage = await response.text().catch(() => response.statusText);
-    throw new ApiError(response.status, response.statusText, errorMessage);
-  }
-
-  // Handle empty responses
-  const text = await response.text();
-  if (!text) {
-    return {} as T;
-  }
-
-  return JSON.parse(text) as T;
-}
+// Re-export error utilities for consumers
+export { HttpError, getAppError };
 
 // Project types
 export interface Project {
@@ -289,19 +243,23 @@ export interface TimelineResponse {
   nextCursor?: string;
 }
 
-// API client
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+// API client using the enhanced HTTP client
 export const api = {
   // Health check
-  health: () => request<{ status: string }>("/health"),
+  health: () => httpClient.get<{ status: string }>("/health"),
 
   // Projects
   projects: {
     list: async () => {
-      const response = await request<{ projects: Project[]; total: number }>("/api/projects");
+      const response = await httpClient.get<{ projects: Project[]; total: number }>("/api/projects");
       return response.projects;
     },
     listWithStats: async () => {
-      const response = await request<{ projects: ProjectWithStats[]; total: number }>("/api/projects?include_stats=true");
+      const response = await httpClient.get<{ projects: ProjectWithStats[]; total: number }>("/api/projects", {
+        params: { include_stats: "true" },
+      });
       // Map backend response to expected frontend format
       return response.projects.map(p => ({
         ...p,
@@ -315,22 +273,16 @@ export const api = {
         },
       }));
     },
-    get: (id: string) => request<Project>(`/api/projects/${id}`),
-    getWithStats: (id: string) => request<ProjectWithStats>(`/api/projects/${id}?include_stats=true`),
+    get: (id: string) => httpClient.get<Project>(`/api/projects/${id}`),
+    getWithStats: (id: string) => httpClient.get<ProjectWithStats>(`/api/projects/${id}`, {
+      params: { include_stats: "true" },
+    }),
     create: (data: Omit<Project, "id" | "createdAt" | "updatedAt">) =>
-      request<Project>("/api/projects", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      httpClient.post<Project>("/api/projects", data),
     update: (id: string, data: Partial<Project>) =>
-      request<Project>(`/api/projects/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      }),
+      httpClient.patch<Project>(`/api/projects/${id}`, data),
     delete: (id: string) =>
-      request<void>(`/api/projects/${id}`, {
-        method: "DELETE",
-      }),
+      httpClient.delete<void>(`/api/projects/${id}`),
   },
 
   // Tasks
@@ -340,7 +292,7 @@ export const api = {
         throw new Error("projectId is required to fetch tasks");
       }
       // Use the project-specific tasks endpoint
-      const response = await request<{
+      const response = await httpClient.get<{
         project: string;
         description: string;
         tasks: Array<{
@@ -357,7 +309,7 @@ export const api = {
         completed: number;
         pending: number;
       }>(`/api/projects/${encodeURIComponent(projectId)}/tasks`);
-      
+
       // Map backend task format to frontend Task format
       return response.tasks.map((t): Task => ({
         id: t.id,
@@ -373,117 +325,75 @@ export const api = {
       }));
     },
     listByProject: (projectId: string) =>
-      request<Task[]>(`/api/projects/${encodeURIComponent(projectId)}/tasks`),
-    get: (id: string) => request<Task>(`/api/tasks/${id}`),
+      httpClient.get<Task[]>(`/api/projects/${encodeURIComponent(projectId)}/tasks`),
+    get: (id: string) => httpClient.get<Task>(`/api/tasks/${id}`),
     create: (data: Omit<Task, "id" | "createdAt" | "updatedAt">) =>
-      request<Task>("/api/tasks", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      httpClient.post<Task>("/api/tasks", data),
     update: (id: string, data: Partial<Task>) =>
-      request<Task>(`/api/tasks/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      }),
+      httpClient.patch<Task>(`/api/tasks/${id}`, data),
     delete: (id: string) =>
-      request<void>(`/api/tasks/${id}`, {
-        method: "DELETE",
-      }),
+      httpClient.delete<void>(`/api/tasks/${id}`),
     reorder: (projectId: string, taskIds: string[]) =>
-      request<void>(`/api/projects/${projectId}/tasks/reorder`, {
-        method: "POST",
-        body: JSON.stringify({ taskIds }),
-      }),
+      httpClient.post<void>(`/api/projects/${projectId}/tasks/reorder`, { taskIds }),
     skip: (id: string) =>
-      request<Task>(`/api/tasks/${id}/skip`, {
-        method: "POST",
-      }),
+      httpClient.post<Task>(`/api/tasks/${id}/skip`),
   },
 
   // Sessions
   sessions: {
     list: (projectId?: string) =>
-      request<Session[]>("/api/sessions", {
+      httpClient.get<Session[]>("/api/sessions", {
         params: projectId ? { projectId } : undefined,
       }),
-    get: (id: string) => request<Session>(`/api/sessions/${id}`),
+    get: (id: string) => httpClient.get<Session>(`/api/sessions/${id}`),
     start: (projectId: string) =>
-      request<Session>("/api/sessions", {
-        method: "POST",
-        body: JSON.stringify({ projectId }),
-      }),
+      httpClient.post<Session>("/api/sessions", { projectId }),
     pause: (id: string) =>
-      request<Session>(`/api/sessions/${id}/pause`, {
-        method: "POST",
-      }),
+      httpClient.post<Session>(`/api/sessions/${id}/pause`),
     resume: (id: string) =>
-      request<Session>(`/api/sessions/${id}/resume`, {
-        method: "POST",
-      }),
+      httpClient.post<Session>(`/api/sessions/${id}/resume`),
     stop: (id: string) =>
-      request<Session>(`/api/sessions/${id}/stop`, {
-        method: "POST",
-      }),
+      httpClient.post<Session>(`/api/sessions/${id}/stop`),
   },
 
   // Orchestration
   orchestration: {
     run: (projectId: string, options?: { dryRun?: boolean }) =>
-      request<{ sessionId: string }>("/api/orchestration/run", {
-        method: "POST",
-        body: JSON.stringify({ projectId, ...options }),
-      }),
+      httpClient.post<{ sessionId: string }>("/api/orchestration/run", { projectId, ...options }),
     status: (sessionId: string) =>
-      request<{ status: string; progress: number }>(`/api/orchestration/status/${sessionId}`),
+      httpClient.get<{ status: string; progress: number }>(`/api/orchestration/status/${sessionId}`),
   },
 
   // Config
   config: {
     get: (projectId: string) =>
-      request<RalphConfig>(`/api/projects/${projectId}/config`),
+      httpClient.get<RalphConfig>(`/api/projects/${projectId}/config`),
     update: (projectId: string, config: RalphConfig) =>
-      request<RalphConfig>(`/api/projects/${projectId}/config`, {
-        method: "PUT",
-        body: JSON.stringify(config),
-      }),
+      httpClient.put<RalphConfig>(`/api/projects/${projectId}/config`, config),
     validate: (projectId: string, config: RalphConfig) =>
-      request<ConfigValidationResult>(`/api/projects/${projectId}/config/validate`, {
-        method: "POST",
-        body: JSON.stringify(config),
-      }),
+      httpClient.post<ConfigValidationResult>(`/api/projects/${projectId}/config/validate`, config),
   },
 
   // Git operations
   git: {
     getStatus: (projectId: string) =>
-      request<GitStatus>(`/api/projects/${projectId}/git/status`),
+      httpClient.get<GitStatus>(`/api/projects/${projectId}/git/status`),
     getBranches: (projectId: string) =>
-      request<Branch[]>(`/api/projects/${projectId}/git/branches`),
+      httpClient.get<Branch[]>(`/api/projects/${projectId}/git/branches`),
     createBranch: (projectId: string, data: CreateBranchRequest) =>
-      request<Branch>(`/api/projects/${projectId}/git/branches`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      httpClient.post<Branch>(`/api/projects/${projectId}/git/branches`, data),
     switchBranch: (projectId: string, branchName: string) =>
-      request<GitStatus>(`/api/projects/${projectId}/git/checkout`, {
-        method: "POST",
-        body: JSON.stringify({ branch: branchName }),
-      }),
+      httpClient.post<GitStatus>(`/api/projects/${projectId}/git/checkout`, { branch: branchName }),
     deleteBranch: (projectId: string, branchName: string) =>
-      request<void>(`/api/projects/${projectId}/git/branches/${encodeURIComponent(branchName)}`, {
-        method: "DELETE",
-      }),
+      httpClient.delete<void>(`/api/projects/${projectId}/git/branches/${encodeURIComponent(branchName)}`),
     createPR: (projectId: string, data: CreatePRRequest) =>
-      request<PRResult>(`/api/projects/${projectId}/pr`, {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
+      httpClient.post<PRResult>(`/api/projects/${projectId}/pr`, data),
   },
 
   // Logs
   logs: {
     list: (projectId: string, filter?: LogFilter, cursor?: string) =>
-      request<LogsResponse>(`/api/projects/${projectId}/logs`, {
+      httpClient.get<LogsResponse>(`/api/projects/${projectId}/logs`, {
         params: {
           ...(filter?.levels ? { levels: filter.levels.join(",") } : {}),
           ...(filter?.sources ? { sources: filter.sources.join(",") } : {}),
@@ -506,7 +416,7 @@ export const api = {
   // Timeline
   timeline: {
     list: (projectId: string, filter?: TimelineFilter, cursor?: string) =>
-      request<TimelineResponse>(`/api/projects/${projectId}/timeline`, {
+      httpClient.get<TimelineResponse>(`/api/projects/${projectId}/timeline`, {
         params: {
           ...(filter?.types ? { types: filter.types.join(",") } : {}),
           ...(filter?.startTime ? { startTime: filter.startTime } : {}),
@@ -532,4 +442,14 @@ export const api = {
   },
 };
 
-export { ApiError };
+// Legacy ApiError for backwards compatibility
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public statusText: string,
+    message: string
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}

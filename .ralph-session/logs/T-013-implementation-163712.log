@@ -1,0 +1,177 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-013 - Build git integration UI and log viewer
+
+Create GitPanel component showing current branch, list of all branches with status (commits ahead/behind, last commit). Add actions for branch creation, switching, deletion, and PR creation. Create LogViewer component for real-time log streaming with search, filters, and ANSI color support. Both connect to respective API endpoints and WebSocket for live updates.
+
+## Acceptance Criteria
+
+- src/components/GitPanel.tsx displays current branch prominently
+- Branch list shows: name, commits ahead/behind remote, last commit message, timestamp
+- Create Branch button with name template input
+- Switch Branch dropdown/action
+- Delete Branch action with confirmation
+- Create PR button opens modal: title (auto-generated), description (from acceptance criteria), one-click creation via POST /api/projects/{id}/pr
+- PR creation success shows link to GitHub/GitLab PR
+- src/components/LogViewer.tsx streams logs in real-time via WebSocket
+- Filters: by agent type, by gate, by log level, by time range
+- Search functionality highlights matches
+- ANSI color codes rendered correctly
+- Auto-scroll toggle
+- Download logs button exports as text file
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Previous Feedback
+
+The previous attempt had issues that need to be addressed:
+
+Gates failed:
+Gate '"'"'pytest'"'"' failed (exit code 1)
+  Full output saved to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/logs/gate-pytest.log
+  (Read this file for complete error details)
+  Output (preview):
+============================= test session starts ==============================
+platform darwin -- Python 3.13.1, pytest-8.4.2, pluggy-1.5.0
+rootdir: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-6.0.0, asyncio-1.2.0, mockito-0.0.4, anyio-4.10.0, mock-3.14.0, logfire-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1192 items
+
+tests/integration/test_api_integration.py ..................             [  1%]
+tests/integration/test_architecture_refactoring.py ..................... [  3%]
+                                                                         [  3%]
+tests/integration/test_autopilot.py .............................        [  5%]
+tests/integration/test_dashboard_ui.py ................................. [  8%]
+..............                                                           [  9%]
+tests/integration/test_fix_loops.py .......................              [ 11%]
+tests/integration/test_frontend_initialization.py ...................... [ 13%]
+.....                                                                    [ 13%]
+tests/integration/test_gates.py ................                         [ 15%]
+tests/integration/test_git_integration.py ..............F
+
+=================================== FAILURES ===================================
+______ TestGitServiceStatusOperations.test_get_status_with_modified_files ______
+/Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/tests/integration/test_git_integration.py:266: in test_get_status_with_modified_files
+    assert "README.md" in status.unstaged
+E   AssertionError: assert '"'"'README.md'"'"' in []
+E    +  where [] = GitStatus(branch='"'"'main'"'"', commit_hash='"'"'454c516da99c'"'"', staged=['"'"'EADME.md'"'"'], unstaged=[], untracked=[], is_clean=False, ahead=0, behind=0).unstaged
+=========================== short test summary info ============================
+FAILED tests/integration/test_git_integration.py::TestGitServiceStatusOperations::test_get_status_with_modified_files
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================== 1 failed, 195 passed in 5.37s =========================
+
+
+Please address these issues in this iteration.
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-013/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T16:37:12.827992Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+All tasks are complete. Let me output the completion signal.
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Fixed bug in `ralph_orchestrator/services/git_service.py:557-559` where `get_status()` method was incorrectly parsing git porcelain output due to using `strip()` before `split("\n")`, which removed leading spaces that indicate file staging status
+- Changed from `strip().split("\n")` to `splitlines()` to preserve leading whitespace in each line
+- Verified all 1192 tests pass
+- Verified GitPanel and LogViewer components exist and meet all acceptance criteria
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T16:41:42.765239Z
+# Duration: 269937ms
+# Exit code: 0

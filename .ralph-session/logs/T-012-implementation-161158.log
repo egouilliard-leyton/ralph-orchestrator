@@ -1,0 +1,145 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-012 - Build workflow editor and config management UI
+
+Create WorkflowEditor component visualizing agent pipeline as connected nodes (Implementation → Test → Gates → Review). Allow drag-and-drop to add/remove agents from palette. Create ConfigEditor component with split-pane view (visual form editor left, YAML preview right) for ralph.yml editing. Both components save changes via PUT /api/projects/{id}/config endpoint with validation.
+
+## Acceptance Criteria
+
+- src/components/WorkflowEditor.tsx displays pipeline as visual flowchart
+- Agent nodes show: name, type, guardrails summary
+- Agent palette sidebar with draggable agent types
+- Click agent node to configure (modal with prompt, guardrails settings)
+- Gate nodes show command and status
+- Add/remove gate buttons with configuration form
+- Save button persists pipeline to ralph.yml via API
+- src/components/ConfigEditor.tsx with split-pane layout
+- Left pane: form editor for common settings (task_source, gates, services)
+- Right pane: live YAML preview updates as form changes
+- Validation against JSON schema before save (shows errors)
+- Save and Reset buttons
+- Both components handle loading and error states
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Previous Feedback
+
+The previous attempt had issues that need to be addressed:
+
+Issues found:
+- Agent guardrails not properly synchronized between WorkflowEditor and backend config
+- ConfigUpdateRequest lacks validation on incoming updates structure before merge
+- YAML preview manually generated without library support for edge cases
+- No component/UI behavior tests (only API contract tests)
+
+Please address these issues in this iteration.
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-012/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T16:11:58.841102Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+All 57 backend tests pass. Let me provide a summary of the implementation:
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Fixed agent guardrails synchronization: Added globalTestPaths prop and "Sync with global test_paths" checkbox in AgentConfigModal for test_writing agents. Changes propagate bidirectionally between agent guardrails and project's test_paths config.
+- Added ConfigUpdateRequest validation: Added @field_validator on updates field that validates structure before merge - checks allowed top-level keys, validates field types (strings, arrays, integers, booleans), validates nested structures, and validates agent types. Returns 422 for invalid inputs.
+- Replaced manual YAML generation with yaml library: Added yaml package to frontend, rewrote configToYaml() to use yamlStringify() for proper handling of edge cases like special characters, quoting, and multiline strings.
+- Added component/UI behavior tests: Set up vitest with React Testing Library, created WorkflowEditor.test.tsx (15 tests) and ConfigEditor.test.tsx (20 tests), added TestConfigUpdateRequestValidation to test_api.py (15 tests). Total: 35 frontend tests + 57 backend tests all passing.
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T16:20:27.371843Z
+# Duration: 508530ms
+# Exit code: 0

@@ -1,0 +1,133 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-005 - Implement event system for real-time broadcasting
+
+Create server/events.py with event type definitions and event emitter/subscriber pattern. Design event schema for all UI updates (task started/completed, agent output, gate execution, signal detection). Implement event queue and broadcasting mechanism that will integrate with WebSocket layer.
+
+## Acceptance Criteria
+
+- server/events.py created with Event base class
+- Event types defined: TaskStarted, TaskCompleted, AgentOutput, AgentPhaseChanged, GateRunning, GateCompleted, SignalDetected, SessionChanged, ConfigChanged
+- Each event includes: type, project_id, timestamp, and type-specific data
+- EventEmitter class implemented with subscribe/emit methods
+- EventQueue class for buffering events before WebSocket broadcast
+- All services (orchestration, session, config, git) integrated with event emitter
+- Unit tests verify events emitted at correct times with correct data
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-005/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T13:54:49.150935Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+Implementation is complete and verified. Here's a summary of what was implemented:
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Created `server/events.py` with the complete event system for real-time broadcasting (1108 lines)
+- Created `server/__init__.py` with package exports
+- Created `tests/unit/test_events.py` with comprehensive unit tests (59 tests, all passing)
+
+The event system includes:
+1. **Event base class** with type, project_id, timestamp, event_id fields
+2. **9 event types**: TaskStarted, TaskCompleted, AgentOutput, AgentPhaseChanged, GateRunning, GateCompleted, SignalDetected, SessionChanged, ConfigChanged
+3. **EventEmitter class** with subscribe/emit pattern (supports type-specific, global, and project-specific subscriptions)
+4. **EventQueue class** for buffering events before WebSocket broadcast (with filtering, async support, max size eviction)
+5. **Service bridge integration** via `create_service_bridge()` that connects all existing services (orchestration, session, config, git) to the event emitter
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T14:01:14.842338Z
+# Duration: 385691ms
+# Exit code: 0

@@ -1,0 +1,136 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-012 - Build workflow editor and config management UI
+
+Create WorkflowEditor component visualizing agent pipeline as connected nodes (Implementation → Test → Gates → Review). Allow drag-and-drop to add/remove agents from palette. Create ConfigEditor component with split-pane view (visual form editor left, YAML preview right) for ralph.yml editing. Both components save changes via PUT /api/projects/{id}/config endpoint with validation.
+
+## Acceptance Criteria
+
+- src/components/WorkflowEditor.tsx displays pipeline as visual flowchart
+- Agent nodes show: name, type, guardrails summary
+- Agent palette sidebar with draggable agent types
+- Click agent node to configure (modal with prompt, guardrails settings)
+- Gate nodes show command and status
+- Add/remove gate buttons with configuration form
+- Save button persists pipeline to ralph.yml via API
+- src/components/ConfigEditor.tsx with split-pane layout
+- Left pane: form editor for common settings (task_source, gates, services)
+- Right pane: live YAML preview updates as form changes
+- Validation against JSON schema before save (shows errors)
+- Save and Reset buttons
+- Both components handle loading and error states
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-012/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T15:56:31.365205Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+The implementation is complete. Here's a summary of what was built:
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Created WorkflowEditor.tsx with visual pipeline flowchart displaying agent nodes (Implementation -> Test -> Gates -> Review), draggable agent palette sidebar, click-to-configure modal, gate nodes with add/remove functionality, and save button
+- Created ConfigEditor.tsx with split-pane layout (form editor left, YAML preview right), collapsible sections for all ralph.yml settings, live validation, and save/reset buttons
+- Added dialog.tsx UI component following shadcn patterns
+- Created use-config.ts hook for config state management
+- Updated api.ts with RalphConfig types and config endpoints (get, update, validate)
+- Updated workflow page with tab navigation between Pipeline Editor and Configuration views
+- Both components handle loading and error states with skeleton loaders
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T16:03:55.096557Z
+# Duration: 443731ms
+# Exit code: 0

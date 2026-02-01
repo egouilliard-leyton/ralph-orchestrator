@@ -1,0 +1,134 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-007 - Implement WebSocket manager for real-time updates
+
+Create server/websocket.py with WebSocket connection manager. Handle client connections per project, broadcast events to subscribed clients, implement bidirectional messaging (client commands, server updates), and handle reconnection logic. Integrate with event system from T-005.
+
+## Acceptance Criteria
+
+- server/websocket.py created with WebSocketManager class
+- WebSocket endpoint /ws/{project_id} accepts connections
+- Connection manager tracks active connections per project
+- Server-to-client events: task_started, agent_output, gate_running, signal_detected, etc.
+- Client-to-server commands: start_task, cancel_execution, create_branch
+- Event broadcasting sends events only to clients subscribed to that project
+- Graceful handling of client disconnects
+- Heartbeat/ping-pong for connection health monitoring
+- Integration tests verify bidirectional communication
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-007/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T14:32:46.803165Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Created `server/websocket.py` with WebSocketManager class for real-time updates
+- WebSocket endpoint `/ws/{project_id}` accepts connections and tracks them per project
+- Connection manager tracks active connections with `_connections` (by project) and `_all_connections` (global)
+- Server-to-client events: task_started, agent_output, gate_running, signal_detected, session_changed, config_changed via `broadcast_event()` and `broadcast_to_project()`
+- Client-to-server commands: start_task, cancel_execution, create_branch, ping, subscribe, unsubscribe with extensible handler registration
+- Event broadcasting sends events only to clients subscribed to that project, with optional event type filtering
+- Graceful disconnect handling with proper cleanup of connection tracking
+- Heartbeat/ping-pong for connection health monitoring (30s interval, 90s timeout)
+- Integration with EventEmitter from T-005 via constructor parameter - emitted events auto-forward to WebSocket clients
+- Updated `server/__init__.py` to export WebSocket components
+- Created `tests/integration/test_websocket_integration.py` with 34 tests verifying bidirectional communication (all passing)
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T14:38:30.420001Z
+# Duration: 343616ms
+# Exit code: 0

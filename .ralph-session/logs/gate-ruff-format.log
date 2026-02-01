@@ -1,0 +1,12 @@
+# Command: uv run ruff format --check ralph_orchestrator/
+# Started: 2026-01-28T09:19:07.356327Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 60s
+------------------------------------------------------------
+# STDERR:
+error: Failed to spawn: `ruff`
+  Caused by: No such file or directory (os error 2)
+------------------------------------------------------------
+# Ended: 2026-01-28T09:19:07.372574Z
+# Duration: 16ms
+# Exit code: 2

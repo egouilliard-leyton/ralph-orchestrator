@@ -1,0 +1,16 @@
+{
+  "session_id": "20260128-083923-3c222136c2616125",
+  "session_token": "ralph-20260128-083923-3c222136c2616125",
+  "started_at": "2026-01-28T08:39:23.452823Z",
+  "task_source": "/Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph/prd.json",
+  "task_source_type": "prd_json",
+  "status": "completed",
+  "ended_at": "2026-01-28T09:19:07.372899Z",
+  "config_path": "/Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph/ralph.yml",
+  "git_branch": "master",
+  "git_commit": "d55cca1630cc",
+  "completed_tasks": [
+    "T-015"
+  ],
+  "total_iterations": 2
+}

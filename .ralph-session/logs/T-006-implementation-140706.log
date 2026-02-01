@@ -1,0 +1,141 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-006 - Create FastAPI application with REST endpoints
+
+Create server/api.py with FastAPI application. Implement all REST endpoints for project management, task operations, config management, git operations, logs, and timeline. Endpoints should call services layer and return JSON responses. Add CORS, error handling, and input validation.
+
+## Acceptance Criteria
+
+- server/api.py created with FastAPI app instance
+- GET /api/projects endpoint returns all discovered projects
+- GET /api/projects/{project_id} returns project details
+- GET /api/projects/{project_id}/tasks returns tasks from prd.json
+- POST /api/projects/{project_id}/run starts task execution
+- POST /api/projects/{project_id}/stop cancels execution
+- GET /api/projects/{project_id}/config returns ralph.yml contents
+- PUT /api/projects/{project_id}/config updates and validates ralph.yml
+- GET /api/projects/{project_id}/branches lists git branches with status
+- POST /api/projects/{project_id}/branches creates new branch
+- POST /api/projects/{project_id}/pr creates pull request
+- GET /api/projects/{project_id}/logs returns log files
+- GET /api/projects/{project_id}/timeline returns timeline.jsonl events
+- CORS configured for localhost development
+- All endpoints have proper error handling with appropriate HTTP status codes
+- Request validation using Pydantic models
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-006/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T14:07:06.305192Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+The implementation is complete. Let me provide a summary of what was done:
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Created server/api.py with FastAPI application and 14 REST endpoints
+- Implemented all required endpoints: projects list/detail, tasks, run/stop, config read/update, branches list/create, PR creation, logs, timeline
+- Added comprehensive Pydantic models for request/response validation
+- Configured CORS for localhost development (ports 3000, 5173, 8080)
+- Integrated with existing services: ProjectService, ConfigService, GitService, SessionService
+- Added proper error handling with appropriate HTTP status codes (400, 404, 409, 500)
+- Updated server/__init__.py to export API components
+- Added FastAPI, uvicorn, pydantic dependencies to pyproject.toml
+- All acceptance criteria satisfied
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T14:12:02.330422Z
+# Duration: 296025ms
+# Exit code: 0
