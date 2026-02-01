@@ -1,0 +1,189 @@
+# Command: claude --print --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-001 - Audit existing architecture and identify refactoring boundaries
+
+Analyze current codebase structure (cli.py, run.py, session.py, gates.py, agents/) to identify which logic must be extracted into services layer. Document current dependencies, coupling points, and event emission points needed for real-time updates. Map out how to preserve CLI functionality while making core logic reusable.
+
+## Acceptance Criteria
+
+- Complete dependency map created showing all modules and their interactions
+- List of logic to extract from cli.py, run.py into services layer documented
+- Event emission points identified for WebSocket broadcasting (task start/stop, agent transitions, gate execution, signal detection)
+- CLI preservation strategy documented (keep commands as thin wrappers)
+- No breaking changes identified for existing CLI commands
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Previous Feedback
+
+The previous attempt had issues that need to be addressed:
+
+Gates failed:
+Gate '"'"'pytest'"'"' failed (exit code 1)
+  Output:
+============================= test session starts ==============================
+platform darwin -- Python 3.13.1, pytest-8.4.2, pluggy-1.5.0
+rootdir: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-6.0.0, asyncio-1.2.0, mockito-0.0.4, anyio-4.10.0, mock-3.14.0, logfire-4.16.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 758 items
+
+tests/integration/test_architecture_end_to_end.py ..........F
+...
+ralph_orchestrator/session.py:418: in load
+    self.verify_checksum()
+ralph_orchestrator/session.py:478: in verify_checksum
+    raise TamperingDetectedError(
+E   ralph_orchestrator.session.TamperingDetectedError: Task status checksum mismatch: embedded=sha256:c1a63fb6df7d44a3506f2a77c0bd4b3850f08ba3d853b520d9e300e95138920e, computed=sha256:d7baa556e8f54de41273424e50552623f0bdda7e9c1cdd66bd03e86b4282b753
+=========================== short test summary info ============================
+FAILED tests/integration/test_architecture_end_to_end.py::TestDataPersistence::test_session_checksum_validation
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+========================= 1 failed, 10 passed in 0.42s =========================
+
+
+Please address these issues in this iteration.
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260126-180523-9f7d0b0a0be6442e">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260126-180523-9f7d0b0a0be6442e
+'
+# Started: 2026-01-26T22:40:23.630332Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+Now let me verify the document meets all the acceptance criteria:
+
+**Acceptance Criteria Verification:**
+
+1. ✅ **Complete dependency map created showing all modules and their interactions** 
+   - Section 1 "Module Dependency Map" includes:
+     - 1.1 Core Architecture Overview (visual diagram)
+     - 1.2 Detailed Module Dependencies (table format)
+     - 1.3 Coupling Analysis
+   
+2. ✅ **List of logic to extract from cli.py, run.py into services layer documented**
+   - Section 2 "Logic Extraction: CLI → Services Layer":
+     - 2.1 Current cli.py Responsibilities (with line numbers)
+     - 2.2 Current run.py Responsibilities (with line numbers)
+     - 2.3 Proposed Services Layer Structure
+   - Section 8 "Detailed File Analysis with Line Numbers" provides comprehensive line-by-line analysis
+
+3. ✅ **Event emission points identified for WebSocket broadcasting**
+   - Section 3 "Event Emission Points for WebSocket Broadcasting":
+     - 3.1 Required Events mapped to timeline.py EventTypes
+     - 3.2 New Events Needed for Real-Time UI
+     - 3.3 Event Bus Implementation Requirements
+     - 3.4 Integration Points in Existing Code
+
+4. ✅ **CLI preservation strategy documented (keep commands as thin wrappers)**
+   - Section 4 "CLI Preservation Strategy":
+     - 4.1 Design Principle: Thin CLI Wrappers
+     - 4.2 Refactoring Pattern Example (before/after code)
+     - 4.3 Output Handler Protocol
+     - 4.4 Backward Compatibility Checklist
+
+5. ✅ **No breaking changes identified for existing CLI commands**
+   - Section 5 "Breaking Change Analysis":
+     - 5.1 Public API Surface
+     - 5.2 Potential Breaking Changes (all mitigated)
+     - 5.3 Guaranteed Preserved Behavior
+   - Section 9 "CLI Commands - No Breaking Changes Verification":
+     - 9.1 Command Interface Verification
+     - 9.2 Environment Variables
+     - 9.3 File Formats
+     - 9.4 Signal Formats
+
+The architecture audit document is comprehensive and complete. The only task remaining was to fix the failing test, which I've done by updating the test to correctly expect `TamperingDetectedError` to be raised when loading a tampered session file.
+
+<task-done session="ralph-20260126-180523-9f7d0b0a0be6442e">
+Implementation complete. Changes:
+- Fixed test_session_checksum_validation in tests/integration/test_architecture_end_to_end.py to correctly handle TamperingDetectedError (the test was expecting verify_checksum() to return False, but the actual implementation raises TamperingDetectedError on tampering detection)
+- Verified existing architecture audit document (docs/architecture-audit-T001.md) meets all acceptance criteria:
+  - Complete dependency map with visual diagram and detailed table (Section 1)
+  - Logic extraction from cli.py and run.py documented with line numbers (Sections 2, 8)
+  - Event emission points identified for WebSocket broadcasting (Section 3)
+  - CLI preservation strategy with thin wrapper pattern documented (Section 4)
+  - No breaking changes verified for all CLI commands, environment variables, file formats (Sections 5, 9)
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-26T22:49:07.426128Z
+# Duration: 523795ms
+# Exit code: 0

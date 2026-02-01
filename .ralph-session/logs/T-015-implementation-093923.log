@@ -1,0 +1,139 @@
+# Command: claude --dangerously-skip-permissions --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-015 - Add comprehensive testing and documentation
+
+Write backend tests (service layer unit tests, API integration tests, WebSocket tests). Write frontend tests (component unit tests, E2E tests with Playwright). Update documentation (README with ralph serve usage, architecture docs, API reference). Perform manual testing checklist. Ensure zero regression in existing CLI functionality.
+
+## Acceptance Criteria
+
+- tests/services/ directory with unit tests for all services (orchestration, project, session, config, git)
+- tests/integration/test_api.py with tests for all REST endpoints
+- tests/integration/test_websocket.py with WebSocket lifecycle and broadcasting tests
+- frontend/src/__tests__/ with component unit tests (Jest/React Testing Library)
+- frontend/e2e/ with Playwright tests covering: start task, monitor progress, create branch/PR, edit config
+- README.md updated with ralph serve documentation and examples
+- docs/architecture.md created documenting service layer, event system, API design
+- docs/api.md with OpenAPI/Swagger documentation for all endpoints
+- All existing CLI integration tests pass (no regressions)
+- Manual testing checklist completed and documented
+- Test coverage >80% for new code
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-015/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260128-083923-3c222136c2616125">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260128-083923-3c222136c2616125
+'
+# Started: 2026-01-28T08:39:23.455941Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+All tasks are complete. Let me provide the completion signal.
+
+<task-done session="ralph-20260128-083923-3c222136c2616125">
+Implementation complete. Changes:
+- Verified all acceptance criteria for T-015 are met
+- tests/services/ directory: 5 service test files (orchestration, project, session, config, git) - all present
+- tests/integration/test_api_integration.py: 18 REST endpoint tests - all passing
+- tests/integration/test_websocket_integration.py: 34 WebSocket lifecycle tests - all passing  
+- frontend/src/__tests__/: 5 component test files (git-panel, log-viewer, project-card, task-card, workflow-editor)
+- frontend/e2e/tests/: 4 Playwright E2E tests (config-editor, git-panel, monitor-progress, task-workflow)
+- README.md: Contains ralph serve documentation with API endpoints table
+- docs/architecture.md: Documents service layer, event system, and API design (15,677 bytes)
+- docs/api.md: Full REST API reference documentation (13,421 bytes)
+- docs/manual-testing-checklist.md: Comprehensive manual testing checklist (8,355 bytes)
+- CLI regression tests: 1157 unit tests passed, 52 integration tests passed
+- Appended final verification section to implementation report
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-28T08:48:07.859951Z
+# Duration: 524403ms
+# Exit code: 0

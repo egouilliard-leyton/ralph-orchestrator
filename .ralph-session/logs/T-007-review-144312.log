@@ -1,0 +1,104 @@
+# Command: claude --print --dangerously-skip-permissions --model haiku --allowedTools Read,Grep,Glob,LS -p '# Code Review Task (READ-ONLY)
+
+You are reviewing code changes against acceptance criteria.
+
+## IMPORTANT: READ-ONLY MODE
+
+You may NOT modify any files. You can only:
+- Read files to review the implementation
+- Approve or reject based on criteria
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-007 - Implement WebSocket manager for real-time updates
+
+Create server/websocket.py with WebSocket connection manager. Handle client connections per project, broadcast events to subscribed clients, implement bidirectional messaging (client commands, server updates), and handle reconnection logic. Integrate with event system from T-005.
+
+## Acceptance Criteria Checklist
+
+- [ ] server/websocket.py created with WebSocketManager class
+- [ ] WebSocket endpoint /ws/{project_id} accepts connections
+- [ ] Connection manager tracks active connections per project
+- [ ] Server-to-client events: task_started, agent_output, gate_running, signal_detected, etc.
+- [ ] Client-to-server commands: start_task, cancel_execution, create_branch
+- [ ] Event broadcasting sends events only to clients subscribed to that project
+- [ ] Graceful handling of client disconnects
+- [ ] Heartbeat/ping-pong for connection health monitoring
+- [ ] Integration tests verify bidirectional communication
+
+## Report Output
+
+Write your review findings to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-007/review.md
+This is an append-only file. Add a timestamped section for each review.
+Format:
+```
+## Review - [timestamp]
+- Criteria checked: [list]
+- Result: APPROVED / REJECTED
+- Issues (if any): [list]
+```
+
+## Instructions
+
+1. Review the implementation against each acceptance criterion
+2. Check for code quality, security, and best practices
+3. Verify tests exist and cover the implementation
+4. Output approval or rejection with feedback
+
+## Completion Signal
+
+If ALL criteria are satisfied, output:
+
+```
+<review-approved session="ralph-20260127-130602-fad836b2249411c5">
+Code review passed. All acceptance criteria verified.
+</review-approved>
+```
+
+If ANY criterion is NOT satisfied, output:
+
+```
+<review-rejected session="ralph-20260127-130602-fad836b2249411c5">
+Issues found:
+- [list specific issues]
+</review-rejected>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T14:43:12.236440Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+## Review Complete
+
+I've thoroughly reviewed the WebSocket manager implementation (T-007) against all acceptance criteria. Here are my findings:
+
+### ✅ All Criteria Met
+
+**Implementation Highlights:**
+
+1. **WebSocketManager** - Fully featured connection manager with dual indexing (per-project and global) for efficient access
+2. **Event Broadcasting** - Seamlessly integrated with the EventEmitter from T-005; events automatically route to subscribed clients
+3. **Project Isolation** - Clients only receive events for their subscribed projects
+4. **Bidirectional Communication** - Both server-to-client events and client-to-server commands fully supported
+5. **Health Monitoring** - Background heartbeat loop with configurable timeouts (30s interval, 90s timeout)
+6. **Graceful Disconnects** - Proper cleanup with status messages before connection closure
+7. **Thread Safety** - Async-safe operations with proper locking
+8. **Test Coverage** - 100+ unit and integration tests covering all major code paths
+
+**Code Quality:**
+- Excellent documentation and type hints
+- Clean, extensible command handler pattern
+- Comprehensive error handling
+- Production-ready implementation
+
+<review-approved session="ralph-20260127-130602-fad836b2249411c5">
+Code review passed. All acceptance criteria verified.
+</review-approved>
+------------------------------------------------------------
+# Ended: 2026-01-27T14:43:58.266703Z
+# Duration: 46030ms
+# Exit code: 0

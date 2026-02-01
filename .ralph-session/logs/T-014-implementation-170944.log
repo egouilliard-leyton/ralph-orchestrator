@@ -1,0 +1,141 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-014 - Build timeline visualization and WebSocket hook
+
+Create Timeline component visualizing events from timeline.jsonl as chronological stream with markers. Implement useWebSocket custom hook for managing WebSocket connections, auto-reconnect, event subscription, and optimistic updates. Integrate WebSocket throughout all components for real-time updates.
+
+## Acceptance Criteria
+
+- src/components/Timeline.tsx displays events chronologically
+- Visual markers for: task started/completed, agent transitions, gate execution (pass/fail), signals, errors
+- Click event to expand and see full details
+- Filter by event type
+- Zoom controls (hourly/daily views)
+- Export timeline button (JSON/CSV)
+- src/hooks/useWebSocket.ts custom hook created
+- useWebSocket(projectId) manages connection lifecycle
+- Auto-reconnect logic with exponential backoff
+- Event subscription system (subscribe to specific event types)
+- Hook returns: connected state, events stream, sendMessage function
+- All components (TaskBoard, LogViewer, Timeline, ProjectList) use useWebSocket
+- Real-time updates work without page refresh
+- UI shows connection status (connected/reconnecting/disconnected)
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-014/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T17:09:44.195788Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+All tasks have been completed. Let me provide a summary of the implementation.
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Created `frontend/src/components/timeline/Timeline.tsx` - Full timeline visualization component with chronological event stream, visual markers for 14 event types (task started/completed/failed, agent transitions, gate pass/fail, signals, errors, session events), click-to-expand details, event type filtering, zoom controls (24h/7d/all), and JSON/CSV export
+- Created `frontend/src/components/timeline/index.ts` - Barrel export
+- Created `frontend/src/hooks/use-timeline.ts` - Custom hook managing timeline state, WebSocket integration, filtering, zoom levels, pagination, and export URLs
+- Created `frontend/src/components/ui/connection-status.tsx` - Reusable ConnectionStatus and ConnectionDot components
+- Enhanced `frontend/src/hooks/use-websocket.ts` - Added "reconnecting" status, exponential backoff (1s-30s), event subscription system with `subscribe()` function, `reconnectAttempt` counter, `isConnected` boolean
+- Updated `frontend/src/services/api.ts` - Added TimelineEventType, TimelineEvent, TimelineFilter, TimelineResponse types and timeline API endpoints
+- Updated `frontend/src/components/tasks/task-board.tsx` - Added "reconnecting" status to ConnectionIndicator
+- Updated `frontend/src/components/logs/log-viewer.tsx` - Added wsStatus prop and ConnectionIndicator
+- Updated `frontend/src/components/git/git-panel.tsx` - Added wsStatus prop and ConnectionIndicator
+- Updated `frontend/src/components/projects/project-list.tsx` - Added wsStatus prop and ConnectionStatus indicator
+- All TypeScript checks pass for new/modified files
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T17:19:20.313612Z
+# Duration: 576117ms
+# Exit code: 0

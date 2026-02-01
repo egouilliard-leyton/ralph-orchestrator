@@ -1,0 +1,159 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-011 - Build Kanban task board with drag-and-drop
+
+Create TaskBoard component with three columns (To Do, In Progress, Done). Display tasks from prd.json as draggable cards. Each card shows title, description, acceptance criteria, current agent, status. Implement drag-and-drop reordering. Connect to GET /api/projects/{id}/tasks and WebSocket for real-time task status updates. Add task actions (start, skip, delete).
+
+## Acceptance Criteria
+
+- src/components/TaskBoard.tsx component with three columns
+- TaskCard component displays: title, truncated description (expandable), acceptance criteria checklist, current agent indicator, duration/timestamp
+- Drag-and-drop implemented using react-dnd or dnd-kit library
+- Tasks can be reordered within To Do column (persists to prd.json)
+- Click task card to expand and see full details + live agent output
+- Start Task button triggers POST /api/projects/{id}/run
+- Real-time updates via WebSocket move tasks between columns automatically
+- Visual indicators when agent is running (pulsing icon)
+- Skip and Delete task actions implemented
+- Loading and error states handled gracefully
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-011/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T15:43:27.765642Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+Implementation is complete. Here's a summary of what was done:
+
+**Summary of T-011 Implementation:**
+
+1. **Installed @dnd-kit libraries** - Added `@dnd-kit/core`, `@dnd-kit/sortable`, and `@dnd-kit/utilities` for drag-and-drop functionality
+
+2. **Created `useTasks` hook** (`frontend/src/hooks/use-tasks.ts`) - Data fetching with WebSocket real-time updates, task CRUD operations, and optimistic UI updates
+
+3. **Created `TaskCard` component** (`frontend/src/components/tasks/task-card.tsx`):
+   - Draggable cards with grip handle
+   - Status badges (To Do, Implementing, Writing Tests, Reviewing, Done, Failed)
+   - Pulsing indicator for running tasks
+   - Live duration counter for in-progress tasks
+   - Expandable side panel with full details and live agent output
+   - Action buttons: Start, Skip, Delete
+
+4. **Created `TaskBoard` component** (`frontend/src/components/tasks/task-board.tsx`):
+   - Three-column Kanban layout (To Do, In Progress, Done)
+   - Drag-and-drop reordering within To Do column
+   - WebSocket connection status indicator
+   - Loading skeletons and error states
+   - Color-coded column headers
+
+5. **Updated tasks page** to use the new TaskBoard component
+
+6. **Extended API service** with additional task methods
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Installed @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities for drag-and-drop
+- Created useTasks hook with REST + WebSocket integration
+- Created TaskCard component with expandable details, status badges, duration display
+- Created TaskBoard component with three Kanban columns and drag-and-drop
+- Updated tasks page to use new TaskBoard component
+- Extended api.ts with additional task methods (listByProject, reorder, skip)
+- All acceptance criteria satisfied
+- TypeScript and build pass successfully
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T15:50:34.496894Z
+# Duration: 426731ms
+# Exit code: 0

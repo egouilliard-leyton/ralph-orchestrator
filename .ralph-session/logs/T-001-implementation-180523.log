@@ -1,0 +1,139 @@
+# Command: claude --print --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-001 - Audit existing architecture and identify refactoring boundaries
+
+Analyze current codebase structure (cli.py, run.py, session.py, gates.py, agents/) to identify which logic must be extracted into services layer. Document current dependencies, coupling points, and event emission points needed for real-time updates. Map out how to preserve CLI functionality while making core logic reusable.
+
+## Acceptance Criteria
+
+- Complete dependency map created showing all modules and their interactions
+- List of logic to extract from cli.py, run.py into services layer documented
+- Event emission points identified for WebSocket broadcasting (task start/stop, agent transitions, gate execution, signal detection)
+- CLI preservation strategy documented (keep commands as thin wrappers)
+- No breaking changes identified for existing CLI commands
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260126-180523-9f7d0b0a0be6442e">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260126-180523-9f7d0b0a0be6442e
+'
+# Started: 2026-01-26T18:05:23.075882Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+The architecture audit document is complete. Let me verify it satisfies all acceptance criteria:
+
+**Acceptance Criteria Review:**
+
+1. ✅ **Complete dependency map created showing all modules and their interactions** - Section 1 includes a visual architecture diagram and detailed module dependency table (Section 1.1, 1.2, 1.3)
+
+2. ✅ **List of logic to extract from cli.py, run.py into services layer documented** - Section 2 provides detailed tables showing which functions/logic to extract from cli.py (Section 2.1) and run.py (Section 2.2), with line numbers, target locations, and priorities
+
+3. ✅ **Event emission points identified for WebSocket broadcasting** - Section 3 includes:
+   - Table of 16 existing events mapped to code locations (Section 3.1)
+   - 5 new events needed for real-time UI (Section 3.2)
+   - Event bus implementation requirements (Section 3.3)
+   - Specific integration points in existing code (Section 3.4)
+
+4. ✅ **CLI preservation strategy documented** - Section 4 covers:
+   - Design principle of thin CLI wrappers (Section 4.1)
+   - Before/after refactoring pattern example (Section 4.2)
+   - OutputHandler protocol definition (Section 4.3)
+   - Backward compatibility checklist for all commands (Section 4.4)
+
+5. ✅ **No breaking changes identified for existing CLI commands** - Section 5 documents:
+   - Public API surface (Section 5.1)
+   - Risk analysis with mitigations (Section 5.2)
+   - Guaranteed preserved behavior (Section 5.3)
+
+<task-done session="ralph-20260126-180523-9f7d0b0a0be6442e">
+Implementation complete. Changes:
+- Created comprehensive architecture audit document at `docs/architecture-audit-T001.md`
+- Documented complete module dependency map with visual diagram showing 4 architectural layers (Entry Points, Orchestration, Domain Services, Infrastructure)
+- Identified 15+ functions/classes to extract from cli.py and run.py into a new services layer
+- Mapped 18 existing event types and identified 5 new events needed for WebSocket broadcasting
+- Documented CLI preservation strategy using thin wrappers and OutputHandler protocol pattern
+- Confirmed no breaking changes required - all refactoring can be additive with re-export facades
+- Provided 4-phase refactoring sequence for implementation
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-26T18:08:37.375719Z
+# Duration: 194299ms
+# Exit code: 0

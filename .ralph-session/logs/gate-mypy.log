@@ -1,0 +1,20 @@
+# Command: uv run mypy ralph_orchestrator/ --ignore-missing-imports --no-error-summary
+# Started: 2026-01-28T09:19:06.695509Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 120s
+------------------------------------------------------------
+# STDOUT:
+ralph_orchestrator/services/session_service.py:318: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/session_service.py:321: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/session_service.py:324: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+server/events.py:497: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+server/events.py:502: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+server/events.py:505: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/config_service.py:244: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/config_service.py:247: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/config_service.py:250: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+ralph_orchestrator/services/config_service.py:253: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]
+------------------------------------------------------------
+# Ended: 2026-01-28T09:19:07.338565Z
+# Duration: 643ms
+# Exit code: 0

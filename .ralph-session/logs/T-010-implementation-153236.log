@@ -1,0 +1,156 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-010 - Build multi-project dashboard UI
+
+Create ProjectList component showing all discovered projects in grid/list view. Each project card shows name, branch, task count, status, last activity. Implement quick actions (open project, start autopilot). Add global search and filters. Connect to GET /api/projects endpoint and WebSocket for real-time updates.
+
+## Acceptance Criteria
+
+- src/pages/index.tsx created as dashboard landing page
+- src/components/ProjectList.tsx component displays grid of project cards
+- ProjectCard component shows: project name, current branch, task counts (pending/in-progress/completed), status badge, last activity timestamp
+- Quick actions on each card: Open (navigate to detail), Start Autopilot
+- Global search filters projects by name
+- Status filter (active, idle, errors)
+- Toggle between grid and list view
+- WebSocket connection updates project status in real-time without refresh
+- Loading states and empty state handled
+- Responsive design works on mobile/tablet
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-010/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T15:32:36.610964Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+I have completed the implementation of task T-010. Here's a summary of what was built:
+
+**New Files Created:**
+- `frontend/src/hooks/use-websocket.ts` - Generic WebSocket hook with auto-reconnect
+- `frontend/src/hooks/use-projects.ts` - Projects data hook with real-time updates
+- `frontend/src/components/ui/badge.tsx` - Badge component for status indicators
+- `frontend/src/components/projects/project-card.tsx` - Project card with task counts and actions
+- `frontend/src/components/projects/project-list.tsx` - List component with search, filters, view toggle
+- `frontend/src/components/projects/index.ts` - Barrel export
+
+**Modified Files:**
+- `frontend/src/services/api.ts` - Added `ProjectWithStats` type and API methods
+- `frontend/src/app/page.tsx` - Complete dashboard with stats and ProjectList
+
+All acceptance criteria have been satisfied:
+- Dashboard page with project cards in grid/list view
+- Project cards show name, branch, task counts, status, last activity
+- Quick actions (Open, Start Autopilot) on each card
+- Global search and status filters
+- View mode toggle (grid/list)
+- WebSocket integration for real-time updates
+- Loading and empty states
+- Responsive design with mobile/tablet support
+
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Added ProjectWithStats type to api.ts with dashboard-specific fields (currentBranch, status, taskCounts, lastActivity)
+- Created use-websocket.ts hook for real-time WebSocket connections with auto-reconnect
+- Created use-projects.ts hook for fetching/managing projects with WebSocket updates
+- Created Badge component (ui/badge.tsx) with status variants (success, warning, error)
+- Created ProjectCard component showing project name, branch, task counts, status badge, progress bar, and quick actions
+- Created ProjectList component with search input, status filter buttons, grid/list view toggle, loading skeletons, and empty states
+- Updated dashboard page (app/page.tsx) with stats cards, real-time connection indicator, and full ProjectList integration
+- All TypeScript types pass, build succeeds
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T15:39:20.716946Z
+# Duration: 404105ms
+# Exit code: 0

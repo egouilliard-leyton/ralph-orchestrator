@@ -1,0 +1,92 @@
+# Command: claude --print --dangerously-skip-permissions --model haiku --allowedTools Read,Grep,Glob,LS -p '# Code Review Task (READ-ONLY)
+
+You are reviewing code changes against acceptance criteria.
+
+## IMPORTANT: READ-ONLY MODE
+
+You may NOT modify any files. You can only:
+- Read files to review the implementation
+- Approve or reject based on criteria
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-006 - Create FastAPI application with REST endpoints
+
+Create server/api.py with FastAPI application. Implement all REST endpoints for project management, task operations, config management, git operations, logs, and timeline. Endpoints should call services layer and return JSON responses. Add CORS, error handling, and input validation.
+
+## Acceptance Criteria Checklist
+
+- [ ] server/api.py created with FastAPI app instance
+- [ ] GET /api/projects endpoint returns all discovered projects
+- [ ] GET /api/projects/{project_id} returns project details
+- [ ] GET /api/projects/{project_id}/tasks returns tasks from prd.json
+- [ ] POST /api/projects/{project_id}/run starts task execution
+- [ ] POST /api/projects/{project_id}/stop cancels execution
+- [ ] GET /api/projects/{project_id}/config returns ralph.yml contents
+- [ ] PUT /api/projects/{project_id}/config updates and validates ralph.yml
+- [ ] GET /api/projects/{project_id}/branches lists git branches with status
+- [ ] POST /api/projects/{project_id}/branches creates new branch
+- [ ] POST /api/projects/{project_id}/pr creates pull request
+- [ ] GET /api/projects/{project_id}/logs returns log files
+- [ ] GET /api/projects/{project_id}/timeline returns timeline.jsonl events
+- [ ] CORS configured for localhost development
+- [ ] All endpoints have proper error handling with appropriate HTTP status codes
+- [ ] Request validation using Pydantic models
+
+## Report Output
+
+Write your review findings to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-006/review.md
+This is an append-only file. Add a timestamped section for each review.
+Format:
+```
+## Review - [timestamp]
+- Criteria checked: [list]
+- Result: APPROVED / REJECTED
+- Issues (if any): [list]
+```
+
+## Instructions
+
+1. Review the implementation against each acceptance criterion
+2. Check for code quality, security, and best practices
+3. Verify tests exist and cover the implementation
+4. Output approval or rejection with feedback
+
+## Completion Signal
+
+If ALL criteria are satisfied, output:
+
+```
+<review-approved session="ralph-20260127-130602-fad836b2249411c5">
+Code review passed. All acceptance criteria verified.
+</review-approved>
+```
+
+If ANY criterion is NOT satisfied, output:
+
+```
+<review-rejected session="ralph-20260127-130602-fad836b2249411c5">
+Issues found:
+- [list specific issues]
+</review-rejected>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T14:30:33.093413Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+Perfect! Now I'll output the approval signal:
+
+```
+<review-approved session="ralph-20260127-130602-fad836b2249411c5">
+Code review passed. All acceptance criteria verified.
+</review-approved>
+```
+------------------------------------------------------------
+# Ended: 2026-01-27T14:32:46.797150Z
+# Duration: 133703ms
+# Exit code: 0

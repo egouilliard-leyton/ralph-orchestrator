@@ -1,0 +1,161 @@
+# Command: claude --print --dangerously-skip-permissions --model claude-opus-4-5-20251101 --allowedTools Read,Write,Glob,LS,Grep,Shell,Edit -p '# Implementation Task
+
+You are implementing a task for a software project.
+
+## Project
+Transform Ralph Orchestrator into a dual-interface system with CLI and modern web UI. Add multi-project management, real-time monitoring, Kanban task visualization, workflow editor, and git integration while preserving all existing CLI functionality.
+
+## Task: T-006 - Create FastAPI application with REST endpoints
+
+Create server/api.py with FastAPI application. Implement all REST endpoints for project management, task operations, config management, git operations, logs, and timeline. Endpoints should call services layer and return JSON responses. Add CORS, error handling, and input validation.
+
+## Acceptance Criteria
+
+- server/api.py created with FastAPI app instance
+- GET /api/projects endpoint returns all discovered projects
+- GET /api/projects/{project_id} returns project details
+- GET /api/projects/{project_id}/tasks returns tasks from prd.json
+- POST /api/projects/{project_id}/run starts task execution
+- POST /api/projects/{project_id}/stop cancels execution
+- GET /api/projects/{project_id}/config returns ralph.yml contents
+- PUT /api/projects/{project_id}/config updates and validates ralph.yml
+- GET /api/projects/{project_id}/branches lists git branches with status
+- POST /api/projects/{project_id}/branches creates new branch
+- POST /api/projects/{project_id}/pr creates pull request
+- GET /api/projects/{project_id}/logs returns log files
+- GET /api/projects/{project_id}/timeline returns timeline.jsonl events
+- CORS configured for localhost development
+- All endpoints have proper error handling with appropriate HTTP status codes
+- Request validation using Pydantic models
+
+## Project Context (AGENTS.md)
+
+# AGENTS.md
+
+> This file captures codebase patterns and conventions discovered during automated development.
+> AI agents read this file to understand project-specific context.
+> Updates are made by automation runs - manual edits may be overwritten.
+
+## Codebase Patterns
+
+### Architecture
+
+<!-- Discovered architectural patterns will be added here -->
+
+### Naming Conventions
+
+<!-- Discovered naming conventions will be added here -->
+
+### Testing Patterns
+
+<!-- Discovered testing patterns will be added here -->
+
+### Common Gotchas
+
+<!-- Discovered gotchas and pitfalls will be added here -->
+
+---
+
+## Technology Stack
+
+<!-- Auto-detected during ralph init -->
+
+- **Backend**: 
+- **Frontend**: 
+- **Database**: 
+- **Testing**: 
+
+---
+
+## File Organization
+
+```
+<!-- Directory structure summary will be added here -->
+```
+
+---
+
+## Recent Learnings
+
+<!-- Learnings from automation runs will be appended below -->
+
+---
+
+*Last updated: [timestamp] by Ralph orchestrator*
+
+
+
+## Previous Feedback
+
+The previous attempt had issues that need to be addressed:
+
+Critical routing bug prevents endpoint accessibility:
+
+The FastAPI application uses {project_id:path} parameter which greedily matches all paths including /tasks, /config, /branches, /logs, /pr, /timeline suffixes. This prevents 8 critical endpoints from being callable:
+
+- GET /api/projects/{project_id}/tasks
+- GET /api/projects/{project_id}/config  
+- PUT /api/projects/{project_id}/config
+- GET /api/projects/{project_id}/branches
+- POST /api/projects/{project_id}/branches
+- POST /api/projects/{project_id}/pr
+- GET /api/projects/{project_id}/logs
+- GET /api/projects/{project_id}/timeline
+
+19 out of 41 tests are skipped due to this routing issue. The implementation itself is well-structured with proper error handling and validation, but the routing architecture makes the majority of endpoints unreachable.
+
+Fix: Remove :path type conversion from the main project endpoint - change {project_id:path} to {project_id} since project identifiers don'"'"'t contain slashes.
+
+See detailed report: .ralph-session/reports/T-006/review.md
+
+Please address these issues in this iteration.
+
+## Report Output
+
+Write a brief summary of your work to: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator/.ralph-session/reports/T-006/implementation.md
+This is an append-only file. Add a timestamped section for each iteration.
+Format:
+```
+## Implementation - [timestamp]
+- What was done
+- Files modified
+- Notes for next iteration (if any)
+```
+
+## Instructions
+
+1. Implement the required changes to satisfy all acceptance criteria
+2. Follow project conventions and best practices
+3. When complete, output the completion signal
+
+## Completion Signal
+
+When you have completed the implementation, you MUST output this signal:
+
+```
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- [describe what you changed]
+</task-done>
+```
+
+IMPORTANT: The session token must be exactly: ralph-20260127-130602-fad836b2249411c5
+'
+# Started: 2026-01-27T14:22:12.575913Z
+# CWD: /Users/edouardgouilliard/Documents/Leyton/CAES/ralph-orchestrator
+# Timeout: 1800s
+------------------------------------------------------------
+# STDOUT:
+<task-done session="ralph-20260127-130602-fad836b2249411c5">
+Implementation complete. Changes:
+- Fixed critical routing bug by changing `{project_id:path}` to `{project_id}` in all 12 endpoint route definitions in server/api.py
+- Removed all 19 pytest.skip() calls from tests/unit/test_api.py that were workarounds for the routing bug
+- Fixed test URLs to use simple project names with mocked get_project_path instead of embedded temp_path paths
+- Updated PRD fixture data in tests to use camelCase field names (acceptanceCriteria, requiresTests) per schema
+- Updated PRInfo mock to include all required fields (body, state, author, created_at, updated_at)
+- All 41 tests now pass with 0 skipped
+</task-done>
+------------------------------------------------------------
+# Ended: 2026-01-27T14:26:40.271656Z
+# Duration: 267695ms
+# Exit code: 0
